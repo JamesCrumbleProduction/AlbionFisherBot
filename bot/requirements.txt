@@ -2,3 +2,5 @@ numpy
 pydantic
 opencv-python
 pynput
+mss
+screeninfo

@@ -1,27 +1,29 @@
-import win32ui
-import win32gui
-import win32con
-import win32api
 import numpy as np
 
+from mss import mss
 from numpy import ndarray
+from screeninfo import get_monitors
 
 from .structure import Region
+from .exceptions import MonitorDefiningError
+
+
+def _define_monitor_region() -> Region:
+    for monitor in get_monitors():
+        if monitor.is_primary or (monitor.x == 0 and monitor.y == 0):
+            return Region(left=0, top=0, width=monitor.width, height=monitor.height)
+
+    raise MonitorDefiningError('Cannot define default monitor region...')
+
+
+DEFAULT_MONITOR_REGION = _define_monitor_region()
 
 
 def validate_region(region: Region | None) -> Region:
     if region is None:
-        return Region(
-            width=win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN),
-            height=win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN),
-            left=win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN),
-            top=win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
-        )
+        return DEFAULT_MONITOR_REGION
 
     elif type(region) is Region:
-        # region.width = region.width - region.left + 1
-        # region.height = region.height - region.top + 1
-
         return region
 
     raise NotImplementedError(
@@ -30,29 +32,5 @@ def validate_region(region: Region | None) -> Region:
 
 
 def grab_screen(region: Region) -> ndarray:
-    hwin = win32gui.GetDesktopWindow()
-
-    hwindc = win32gui.GetWindowDC(hwin)
-    srcdc = win32ui.CreateDCFromHandle(hwindc)
-    memdc = srcdc.CreateCompatibleDC()
-    bmp = win32ui.CreateBitmap()
-
-    bmp.CreateCompatibleBitmap(
-        srcdc, region.width, region.height
-    )
-    memdc.SelectObject(bmp)
-    memdc.BitBlt(
-        (0, 0), (region.width, region.height),
-        srcdc, (region.left, region.top), win32con.SRCCOPY
-    )
-
-    signedIntsArray = bmp.GetBitmapBits(True)
-    img = np.frombuffer(signedIntsArray, dtype='uint8')
-    img.shape = (region.height, region.width, 4)
-
-    srcdc.DeleteDC()
-    memdc.DeleteDC()
-    win32gui.ReleaseDC(hwin, hwindc)
-    win32gui.DeleteObject(bmp.GetHandle())
-
-    return np.array(img)
+    with mss() as base:
+        return np.array(base.grab(region.dict()), dtype=np.uint8)
