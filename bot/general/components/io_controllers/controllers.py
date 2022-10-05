@@ -89,29 +89,6 @@ class CommonIOController:
             CommonIOController.mouse_left_button_is_pressed = False
 
 
-class ClipboardIOController:
-
-    __slots__ = ()
-
-    def _clear_clipboard(self) -> None:
-        pyperclip.copy('')
-
-    def _copy_to_clipboard(self) -> None:
-        KEYBOARD.press(Key.ctrl_l)
-        KEYBOARD.press('c')
-        time.sleep(settings.IO_SERVICE.CLICK_INTERVAL)
-        KEYBOARD.release('c')
-        KEYBOARD.release(Key.ctrl_l)
-
-    def get_clipboard_data(self) -> str | None:
-        self._clear_clipboard()
-        self._copy_to_clipboard()
-
-        data = pyperclip.paste()
-
-        return None if data == '' else data
-
-
 class IterateIOController:
 
     __slots__ = (
