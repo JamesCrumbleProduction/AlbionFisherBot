@@ -72,6 +72,7 @@ class FisherBot:
         dynamic_bobber_offset = int(
             after_throw_value / 100 * settings.BOT.BOBBER_CATCH_THRESHOLD
         )
+        print(bobber_pixels, dynamic_bobber_offset)
 
         return bobber_pixels < dynamic_bobber_offset
 
@@ -79,7 +80,7 @@ class FisherBot:
         CommonIOController.press_mouse_button_and_release(
             settings.BOT.THROW_DELAY
         )
-        time.sleep(1.5)
+        time.sleep(2)
 
         after_throw_value = self._bobber_scanner.get_pixels_of_bobber_mask()
 
@@ -90,7 +91,7 @@ class FisherBot:
                 CommonIOController.mouse_left_click()
                 break
 
-            time.sleep(0.1)
+            time.sleep(0.25)
 
     def _catch_fish(self) -> None:
         # CommonIOController.press_mouse_left_button()
@@ -103,6 +104,7 @@ class FisherBot:
 
         while True:
             if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
+                CommonIOController.press_mouse_left_button()
                 break
 
             time.sleep(0.1)

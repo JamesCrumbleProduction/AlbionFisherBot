@@ -24,7 +24,7 @@ class BotSettings(BaseSettings):
 
     # fishing rod throwing delay
     THROW_DELAY: float = 0.6
-    BOBBER_CATCH_THRESHOLD: int = 45  # in percentage
+    BOBBER_CATCH_THRESHOLD: int = 85  # in percentage
     MOUSE_CATCHING_BAR_THRESHOLD: int = 60  # in percentage
 
 
