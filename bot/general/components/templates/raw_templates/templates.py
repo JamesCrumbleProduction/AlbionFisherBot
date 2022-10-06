@@ -18,6 +18,10 @@ class Paths:
             ROOT_PATH, 'fisher_bot'
         )
         bobbers = os.path.join(__fisher_bot_templates, 'bobbers')
+        status_bar_components = os.path.join(
+            __fisher_bot_templates, 'status_bar_components'
+        )
+        assert os.path.exists(status_bar_components) is True
         other = os.path.join(__fisher_bot_templates, 'other')
 
 
@@ -33,6 +37,16 @@ class RawTemplates:
             )
             for bobber in os.listdir(Paths.FisherBotTemplates.bobbers)
             if os.path.isfile(os.path.join(Paths.FisherBotTemplates.bobbers, bobber))
+        )
+        status_bar_components = (
+            RawTemplate(
+                label=str(*status_bar_component.split('.')[:-1]),
+                path=os.path.join(
+                    Paths.FisherBotTemplates.status_bar_components, status_bar_component
+                )
+            )
+            for status_bar_component in os.listdir(Paths.FisherBotTemplates.status_bar_components)
+            if os.path.isfile(os.path.join(Paths.FisherBotTemplates.status_bar_components, status_bar_component))
         )
         other = (
             RawTemplate(

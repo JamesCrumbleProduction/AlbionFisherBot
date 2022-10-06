@@ -1,5 +1,6 @@
 import time
 
+
 from .settings import settings
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
@@ -10,6 +11,7 @@ class FisherBot:
 
     __slots__ = (
         '_bobber_scanner',
+        '_hsv_bobber_scanner',
         '_bobber_pixels_threshold',
         '_catching_bobber_scanner',
         '_catching_status_bar_scanner',
@@ -19,15 +21,14 @@ class FisherBot:
     def __init__(self) -> None:
 
         self._bobber_pixels_threshold: int = None
-        self._bobber_scanner = HSVBobberScanner(
+        self._hsv_bobber_scanner = HSVBobberScanner(
             settings.HSV_CONFIGS.Bobber.LOWER_HSV_ARRAY,
-            settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY,
-            Region(width=1920, height=1080, left=0, top=0)
+            settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY
         )
-        # self._bobber_scanner = TemplateScanner(
-        #     iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
-        #     threshold=0.95, region=Region(width=1920, height=1080, left=0, top=0)
-        # )
+        self._bobber_scanner = TemplateScanner(
+            iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
+            threshold=0.6
+        )
 
         # initing when first fish was catching
         self._catching_bar_mouse_hold_threshold: float = None
@@ -37,9 +38,9 @@ class FisherBot:
     def _init_catching_scanner(self) -> None:
 
         self._catching_status_bar_scanner = TemplateScanner(
-            FISHER_BOT_COMPILED_TEMPLATES.other_templates.get(
+            FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'catching_status_bar'
-            ), threshold=0.65, region=None  # region was inited in the future (when catching bar was actually founded)
+            ), threshold=0.7, region=None  # region was inited in the future (when catching bar was actually founded)
         )
 
         while True:
@@ -53,13 +54,10 @@ class FisherBot:
 
                 self._catching_status_bar_scanner.region = catching_bar_coordinate.region
                 self._catching_bobber_scanner = TemplateScanner(
-                    FISHER_BOT_COMPILED_TEMPLATES.bobbers.get(
+                    FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                         'bobber_status_bar'
                     ), threshold=0.7, region=catching_bar_coordinate.region
                 )
-                # self._catching_bobber_scanner.update_source()
-
-                # cv2.imwrite('test.png', self._catching_bobber_scanner._image_rgb)
 
                 self._catching_bar_mouse_hold_threshold = catching_bar_coordinate.region.left + int(
                     catching_bar_coordinate.region.width / 100 *
@@ -67,14 +65,47 @@ class FisherBot:
                 )
                 return
 
-    def _need_to_catch(self, after_throw_value: int) -> bool:
-        bobber_pixels: int = self._bobber_scanner.get_pixels_of_bobber_mask()
-        dynamic_bobber_offset = int(
-            after_throw_value / 100 * settings.BOT.BOBBER_CATCH_THRESHOLD
+    def _calc_bobber_offset(self, bobber_region: Region) -> int:
+        bobber_pixels: int = self._hsv_bobber_scanner(
+            as_custom_region=bobber_region
+        ).get_pixels_of_bobber_mask()
+        bobber_offset = int(
+            bobber_pixels / 100 * (100 - settings.BOT.BOBBER_CATCH_THRESHOLD)
         )
-        print(bobber_pixels, dynamic_bobber_offset)
+        print(bobber_pixels, bobber_offset)
+        return bobber_offset
 
-        return bobber_pixels < dynamic_bobber_offset
+    def _need_to_catch(self, bobber_region: Region, bobber_offset: int) -> bool:
+        bobber_pixels: int = self._hsv_bobber_scanner(
+            as_custom_region=bobber_region
+        ).get_pixels_of_bobber_mask()
+        print(bobber_pixels, bobber_offset)
+        return bobber_pixels < bobber_offset
+
+    def _extend_founded_bobber_region(self, region: Region) -> Region:
+        print(region)
+        region.height = int(region.height / 100 * (
+            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
+        ))
+        region.width = int(region.width / 100 * (
+            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
+        ))
+        region.left = int(region.left / 100 * (
+            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
+        ))
+        region.top = int(region.top / 100 * (
+            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
+        ))
+        print(region)
+        return region
+
+    def _find_bobber_region(self, extend_region: bool = True) -> Region:
+        while True:
+            for coordinate in self._bobber_scanner.iterate_all_by_first_founded():
+                if coordinate:
+                    if extend_region:
+                        return self._extend_founded_bobber_region(coordinate.region)
+                    return coordinate.region
 
     def _catch_when_fish_awaiting(self) -> None:
         CommonIOController.press_mouse_button_and_release(
@@ -82,19 +113,19 @@ class FisherBot:
         )
         time.sleep(2)
 
-        after_throw_value = self._bobber_scanner.get_pixels_of_bobber_mask()
+        bobber_region = self._find_bobber_region(extend_region=False)
+        bobber_offset = self._calc_bobber_offset(bobber_region)
 
         while True:
-            condition = self._need_to_catch(after_throw_value)
+            condition = self._need_to_catch(bobber_region, bobber_offset)
             print(f'CONDITION OF BOBBER => {condition}')
             if condition:
                 CommonIOController.mouse_left_click()
                 break
 
-            time.sleep(0.25)
+            time.sleep(0.1)
 
     def _catch_fish(self) -> None:
-        # CommonIOController.press_mouse_left_button()
 
         if self._catching_status_bar_scanner is None:
             print('INITING CATCHING SCANNER')
@@ -104,7 +135,6 @@ class FisherBot:
 
         while True:
             if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
-                CommonIOController.press_mouse_left_button()
                 break
 
             time.sleep(0.1)
