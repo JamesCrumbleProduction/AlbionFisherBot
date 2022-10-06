@@ -19,6 +19,9 @@ class FisherBotCompiledTemplates:
         self._bobbers = CompiledTemplates(TemplateCompiler(
             RawTemplates.FisherBotRawTemplates.bobbers
         ).compile_templates())
+        self._status_bar_components = CompiledTemplates(TemplateCompiler(
+            RawTemplates.FisherBotRawTemplates.status_bar_components
+        ).compile_templates())
         self._other_templates = CompiledTemplates(TemplateCompiler(
             RawTemplates.FisherBotRawTemplates.other
         ).compile_templates())
@@ -26,6 +29,10 @@ class FisherBotCompiledTemplates:
     @property
     def bobbers(self) -> CompiledTemplates:
         return self._bobbers
+
+    @property
+    def status_bar_components(self) -> CompiledTemplates:
+        return self._status_bar_components
 
     @property
     def other_templates(self) -> CompiledTemplates:
