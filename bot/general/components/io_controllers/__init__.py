@@ -1,4 +1,4 @@
-from .structure import IterateByAxis
+from .schemas import IterateByAxis, ScrollDirection
 from .controllers import (
     CommonIOController,
     IterateIOController,
@@ -6,6 +6,7 @@ from .controllers import (
 
 __all__ = (
     'IterateByAxis',
+    'ScrollDirection',
     'CommonIOController',
     'IterateIOController',
 )

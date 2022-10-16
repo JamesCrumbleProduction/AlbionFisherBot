@@ -9,7 +9,7 @@ from typing import Iterator, Iterable
 
 from ...helpers import source_auto_update
 from ....image_grabber import grab_screen, validate_region
-from ....structure import (
+from ....schemas import (
     Region,
     Coordinate,
     ValidatedTemplateData
@@ -44,8 +44,11 @@ class TemplateScanner:
         self._image_rgb: ndarray = None
         self._source_kwargs = dict()
 
-    def __call__(self, /, as_custom_region: Region) -> TemplateScanner:
-        self._source_kwargs['as_custom_region'] = as_custom_region
+    def __call__(self, /, as_custom_region: Region = None, as_custom_image: np.ndarray = None) -> TemplateScanner:
+        if as_custom_region is not None:
+            self._source_kwargs['as_custom_region'] = as_custom_region
+        if as_custom_image is not None:
+            self._source_kwargs['as_custom_image'] = as_custom_image
         return self
 
     @source_auto_update
@@ -124,11 +127,13 @@ class TemplateScanner:
 
         return False
 
-    def update_source(self, as_custom_region: Region = None) -> None:
+    def update_source(self, **kwargs) -> None:
         self._image_rgb = cv2.cvtColor(
             grab_screen(
-                self.region if as_custom_region is None else as_custom_region
-            ),
+                self.region
+                if kwargs.get('as_custom_region') is None
+                else kwargs.get('as_custom_region')
+            ) if kwargs.get('as_custom_image') is None else kwargs.get('as_custom_image'),
             cv2.COLOR_BGR2RGB
         )
 

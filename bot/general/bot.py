@@ -1,10 +1,10 @@
 import time
 
-
 from .settings import settings
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.world_to_screen import TemplateScanner, HSVBobberScanner, Region
+from .components.settings import settings as componenets_settings
 
 
 class FisherBot:
@@ -22,8 +22,8 @@ class FisherBot:
 
         self._bobber_pixels_threshold: int = None
         self._hsv_bobber_scanner = HSVBobberScanner(
-            settings.HSV_CONFIGS.Bobber.LOWER_HSV_ARRAY,
-            settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY
+            componenets_settings.HSV_CONFIGS.Bobber.LOWER_HSV_ARRAY,
+            componenets_settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY
         )
         self._bobber_scanner = TemplateScanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
@@ -61,16 +61,19 @@ class FisherBot:
 
                 self._catching_bar_mouse_hold_threshold = catching_bar_coordinate.region.left + int(
                     catching_bar_coordinate.region.width / 100 *
-                    settings.BOT.MOUSE_CATCHING_BAR_THRESHOLD
+                    settings.MOUSE_CATCHING_BAR_THRESHOLD
                 )
                 return
+
+    def _check_if_fish_catching(self) -> bool:
+        ...
 
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
         bobber_pixels: int = self._hsv_bobber_scanner(
             as_custom_region=bobber_region
         ).get_pixels_of_bobber_mask()
         bobber_offset = int(
-            bobber_pixels / 100 * (100 - settings.BOT.BOBBER_CATCH_THRESHOLD)
+            bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
         )
         print(bobber_pixels, bobber_offset)
         return bobber_offset
@@ -82,34 +85,15 @@ class FisherBot:
         print(bobber_pixels, bobber_offset)
         return bobber_pixels < bobber_offset
 
-    def _extend_founded_bobber_region(self, region: Region) -> Region:
-        print(region)
-        region.height = int(region.height / 100 * (
-            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
-        ))
-        region.width = int(region.width / 100 * (
-            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
-        ))
-        region.left = int(region.left / 100 * (
-            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
-        ))
-        region.top = int(region.top / 100 * (
-            100 + settings.BOT.BOBBER_REGION_EXTENDED_PERCENTAGE
-        ))
-        print(region)
-        return region
-
-    def _find_bobber_region(self, extend_region: bool = True) -> Region:
+    def _find_bobber_region(self) -> Region:
         while True:
             for coordinate in self._bobber_scanner.iterate_all_by_first_founded():
                 if coordinate:
-                    if extend_region:
-                        return self._extend_founded_bobber_region(coordinate.region)
                     return coordinate.region
 
     def _catch_when_fish_awaiting(self) -> None:
         CommonIOController.press_mouse_button_and_release(
-            settings.BOT.THROW_DELAY
+            settings.THROW_DELAY
         )
         time.sleep(2)
 
@@ -172,6 +156,5 @@ class FisherBot:
         while True:
             self._catch_when_fish_awaiting()
             self._catch_fish()
-            print(CommonIOController.mouse_left_button_is_pressed)
             print('awaiting for new fishing...')
             time.sleep(2)

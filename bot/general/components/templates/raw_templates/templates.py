@@ -2,7 +2,7 @@ import os
 
 from dataclasses import dataclass
 
-from .structure import RawTemplate
+from .schemas import RawTemplate
 
 
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -21,7 +21,6 @@ class Paths:
         status_bar_components = os.path.join(
             __fisher_bot_templates, 'status_bar_components'
         )
-        assert os.path.exists(status_bar_components) is True
         other = os.path.join(__fisher_bot_templates, 'other')
 
 

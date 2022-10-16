@@ -1,14 +1,14 @@
 import time
-import pyperclip
 
-from pynput.keyboard import Key
 from pynput.mouse import Button
+from pynput.keyboard import Key, KeyCode
 from pynput.mouse import Controller as MouseController
 from pynput.keyboard import Controller as KeyboardController
 
-from .structure import IterateByAxis
+from .exceptions import UnknownScrollDirection
+from .schemas import IterateByAxis, ScrollDirection
+from ..settings import settings
 from ..world_to_screen import Coordinate
-from ...settings import settings
 
 
 MOUSE = MouseController()
@@ -24,7 +24,7 @@ class CommonIOController:
         MOUSE.position = coordinate.tuple_format()
 
     @staticmethod
-    def press(key: Key) -> None:
+    def press(key: str | Key | KeyCode) -> None:
         KEYBOARD.press(key)
         KEYBOARD.release(key)
 
@@ -44,12 +44,12 @@ class CommonIOController:
         CommonIOController.grab()
 
     @staticmethod
-    def move_and_click(coordinate: Coordinate) -> None:
+    def move_and_click(coordinate: Coordinate, button: Button) -> None:
 
         CommonIOController.move(coordinate)
         time.sleep(settings.IO_SERVICE.CLICK_INTERVAL)
 
-        MOUSE.click(Button.left)
+        MOUSE.click(button)
         time.sleep(settings.IO_SERVICE.CLICK_INTERVAL)
 
     @staticmethod
@@ -87,6 +87,24 @@ class CommonIOController:
         if CommonIOController.mouse_left_button_is_pressed is True:
             MOUSE.release(Button.left)
             CommonIOController.mouse_left_button_is_pressed = False
+
+    def scroll(steps: int, direction: ScrollDirection) -> None:
+        match direction:
+            case ScrollDirection.UP:
+                steps = +steps
+            case ScrollDirection.DOWN:
+                steps = -steps
+            case _:
+                raise UnknownScrollDirection(
+                    f'Unknown scroll direction => {direction}'
+                )
+
+        MOUSE.scroll(0, steps)
+
+    @staticmethod
+    def mouse_position() -> Coordinate:
+        pos = MOUSE.position
+        return Coordinate(x=pos[0], y=pos[1])
 
 
 class IterateIOController:
