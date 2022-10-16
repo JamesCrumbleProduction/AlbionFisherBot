@@ -71,7 +71,7 @@ class FisherBot:
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
         bobber_pixels: int = self._hsv_bobber_scanner(
             as_custom_region=bobber_region
-        ).get_pixels_of_bobber_mask()
+        ).count_nonzero_mask()
         bobber_offset = int(
             bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
         )
@@ -81,7 +81,7 @@ class FisherBot:
     def _need_to_catch(self, bobber_region: Region, bobber_offset: int) -> bool:
         bobber_pixels: int = self._hsv_bobber_scanner(
             as_custom_region=bobber_region
-        ).get_pixels_of_bobber_mask()
+        ).count_nonzero_mask()
         print(bobber_pixels, bobber_offset)
         return bobber_pixels < bobber_offset
 

@@ -43,7 +43,7 @@ class HSVBobberScanner:
         return self
 
     @source_auto_update
-    def get_pixels_of_bobber_mask(self) -> int:
+    def count_nonzero_mask(self) -> int:
         bitwise: np.ndarray = cv2.bitwise_and(
             self._image, self._image, mask=self._hsv_mask
         )

@@ -33,7 +33,7 @@ class TemplateScanner:
         *compiled_templates: CompiledTemplate,
         iterable_templates: Iterable[CompiledTemplate] = list(),
         region: Region = None,
-        threshold: int = 1
+        threshold: float = 1
     ):
         assert 0 < threshold <= 1
 
