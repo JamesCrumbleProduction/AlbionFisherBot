@@ -1,6 +1,7 @@
 import time
 
 from .settings import settings
+from .services.logger import FISHER_BOT_LOGGER
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.world_to_screen import TemplateScanner, HSVBobberScanner, Region
@@ -44,14 +45,8 @@ class FisherBot:
         )
 
         while True:
+            # TODO: Setup to regions only
             if catching_bar_coordinate := self._catching_status_bar_scanner.indentify_by_first():
-                print((
-                    f'FOUND CATCHING BAR COORDINATE => '
-                    f'X: {catching_bar_coordinate.x} '
-                    f'Y: {catching_bar_coordinate.y}\n\t'
-                    f'REGION: {catching_bar_coordinate.region}'
-                ))
-
                 self._catching_status_bar_scanner.region = catching_bar_coordinate.region
                 self._catching_bobber_scanner = TemplateScanner(
                     FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(

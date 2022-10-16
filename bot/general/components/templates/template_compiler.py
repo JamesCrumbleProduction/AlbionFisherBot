@@ -12,25 +12,6 @@ def to_cvt_color(raw_image: ndarray) -> ndarray:
     return cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
 
 
-class CompiledTemplates:
-
-    __slots__ = '_compiled_templates',
-
-    def __init__(self, compiled_templates: Iterable[CompiledTemplate]):
-        self._compiled_templates = {
-            template.label: template
-            for template in compiled_templates
-        }
-
-    def get(self, label: str) -> CompiledTemplate:
-        return self._compiled_templates[label]
-
-    @property
-    def templates(self) -> Iterator[CompiledTemplate]:
-        for template in self._compiled_templates.values():
-            yield template
-
-
 class TemplateCompiler:
 
     __slots__ = '_raw_templates',
