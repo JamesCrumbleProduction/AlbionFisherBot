@@ -34,7 +34,7 @@ class FisherBotServer:
                 while True:
                     if bot_instance.is_running is False:
                         os._exit(0)
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(0.5)
 
             asyncio.get_running_loop().create_task(
                 _working_event(), name='_working_event'
