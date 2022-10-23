@@ -37,3 +37,19 @@ else
     echo "!!! Something went wrong with python3.10-distutils installation !!!"
     exit
 fi
+
+apt install -y python3-pip
+if [ $? -eq 0 ]; 
+    then echo "python3-pip installed successfully" 
+else
+    echo "!!! Something went wrong with python3-pip installation !!!"
+    exit
+fi
+
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+if [ $? -eq 0 ]; 
+    then echo "pip dependency for python3.10 installed successfully" 
+else
+    echo "!!! Something went wrong with pip dependency for python3.10 installation !!!"
+    exit
+fi
