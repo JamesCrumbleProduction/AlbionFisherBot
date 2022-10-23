@@ -29,6 +29,7 @@ class FisherBot:
         self._init_buffs_controller()
 
     def _init_bobber_scanners(self) -> None:
+        FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
         self._hsv_bobber_scanner = HSVBobberScanner(
             componenets_settings.HSV_CONFIGS.Bobber.LOWER_HSV_ARRAY,
             componenets_settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY
@@ -39,6 +40,7 @@ class FisherBot:
         )
 
     def _init_catching_scanners(self) -> None:
+        FISHER_BOT_LOGGER.debug('INITING CATCHING SCANNERS')
         self._catching_bar_mouse_hold_threshold = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
             componenets_settings.REGIONS.CATCHING_BAR.width * 0.75
@@ -59,6 +61,8 @@ class FisherBot:
         )
 
     def _init_buffs_controller(self) -> None:
+        FISHER_BOT_LOGGER.debug('INITING BUFFS CONTROLLER')
+
         bait_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('bait')
         eat_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('eat')
 
@@ -109,15 +113,25 @@ class FisherBot:
         bobber_offset = int(
             bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
         )
-        print(bobber_pixels, bobber_offset)
+
+        FISHER_BOT_LOGGER.debug(
+            f'CALC BOBBER OFFSET: PIXELS = "{bobber_pixels}", OFFSET = "{bobber_offset}"'
+        )
+
         return bobber_offset
 
     def _need_to_catch(self, bobber_region: Region, bobber_offset: int) -> bool:
         bobber_pixels: int = self._hsv_bobber_scanner(
             as_custom_region=bobber_region
         ).count_nonzero_mask()
-        print(bobber_pixels, bobber_offset)
-        return bobber_pixels < bobber_offset
+
+        condition: bool = bobber_pixels < bobber_offset
+
+        FISHER_BOT_LOGGER.debug(
+            f'NEED TO CATCH => {condition}\n\tPIXELS = "{bobber_pixels}" < OFFSET = "{bobber_offset}"'
+        )
+
+        return condition
 
     def _find_bobber_region(self) -> Region:
         while True:
@@ -138,16 +152,13 @@ class FisherBot:
 
         while True:
             condition = self._need_to_catch(bobber_region, bobber_offset)
-            print(f'CONDITION OF BOBBER => {condition}')
             if condition:
                 CommonIOController.mouse_left_click()
                 break
 
             time.sleep(0.1)
 
-    def _select_new_mouse_position_for_fishing(
-        self, static_mouse_pos: Coordinate
-    ) -> None:
+    def _select_new_mouse_position_for_fishing(self, static_mouse_pos: Coordinate) -> None:
         x_new = static_mouse_pos.x + random.randint(
             -settings.CATCHING_AREA_RANGE[0], settings.CATCHING_AREA_RANGE[0]
         )
@@ -158,92 +169,108 @@ class FisherBot:
         CommonIOController.move(new_pos)
 
     def _check_if_actually_fish_catching(self) -> bool:
-        print('WAIT LOWER REGION')
+        FISHER_BOT_LOGGER.info('CHECKING IF ACTUALLY FISH CATCHING')
+
+        FISHER_BOT_LOGGER.info('REACHING LEFT BORDER')
         while True:
             if coord := self._catching_bobber_scanner.indentify_by_first():
-                print(
-                    coord.x - coord.region.width // 2,
-                    self._is_fish_checking_threshold
+                bobber_position = coord.x - coord.region.width // 2
+                FISHER_BOT_LOGGER.debug(
+                    f'BOBBER POSITION = "{bobber_position}"\n\t'
+                    f'{bobber_position} <= {self._is_fish_checking_threshold}'
                 )
-                if coord.x - coord.region.width // 2 <= self._is_fish_checking_threshold:
+                if bobber_position <= self._is_fish_checking_threshold:
+                    FISHER_BOT_LOGGER.info('REACHED LEFT BORDER')
                     CommonIOController.press_mouse_left_button()
                     break
 
             time.sleep(0.1)
 
-        print('START')
-
+        FISHER_BOT_LOGGER.info('REACHING RIGHT BORDER')
         while True:
             if coord := self._catching_bobber_scanner.indentify_by_first():
-                print(
-                    coord.x - coord.region.width // 2,
-                    self._is_fish_checking_threshold
+                bobber_position = coord.x - coord.region.width // 2
+                FISHER_BOT_LOGGER.debug(
+                    f'BOBBER POSITION = "{bobber_position}"\n\t'
+                    f'{bobber_position} >= {self._is_fish_checking_threshold}'
                 )
-                if coord.x - coord.region.width // 2 >= self._is_fish_checking_threshold:
+                if bobber_position >= self._is_fish_checking_threshold:
+                    FISHER_BOT_LOGGER.info('REACHED RIGHT BORDER')
                     CommonIOController.release_mouse_left_button()
                     break
 
             time.sleep(0.1)
         time.sleep(0.1)
 
-        print('START checking if actually fish')
+        FISHER_BOT_LOGGER.info('CHECKING FOR ACTUALLY FISH')
 
-        last_coord = self._fish_catching_distance_scanner.indentify_by_first()
+        last_fish_distance_pos = self._fish_catching_distance_scanner.indentify_by_first()
+        if last_fish_distance_pos is None:
+            FISHER_BOT_LOGGER.warning(
+                'CANNOT FIND "last_fish_distance_pos" ...')
+            return False
 
-        if last_coord is None:
-            print('last_coord IS NONE')
-            raise ValueError()
+        last_fish_distance_pos = (
+            last_fish_distance_pos.x - last_fish_distance_pos.region.width // 2
+        )
 
         for _ in range(10):
             if coord := self._fish_catching_distance_scanner.indentify_by_first():
-                print(coord.x - coord.region.width // 2,
-                      last_coord.x - last_coord.region.width // 2)
-                if coord.x - coord.region.width // 2 != last_coord.x - last_coord.region.width // 2:
+                fish_distance_position = coord.x - coord.region.width // 2
+                FISHER_BOT_LOGGER.debug(
+                    f'FISH DISTANCE POSITION = "{bobber_position}"\n\t'
+                    f'{bobber_position} >= {last_fish_distance_pos}'
+                )
+                if fish_distance_position != last_fish_distance_pos:
+                    FISHER_BOT_LOGGER.info('FISH RECOGNIZED')
                     return True
 
             time.sleep(0.05)
 
+        FISHER_BOT_LOGGER.info('LOOKS LIKE NOT FISH. SKIPPING')
         return False
 
-    def _catch_fish(self) -> None:
+    def _prepare_for_catching(self) -> bool:
 
-        print('CATCHING FISH')
+        FISHER_BOT_LOGGER.info('PREPARE FOR CATCHING')
 
         for _ in range(10):
-            if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
+            if self._catching_bobber_scanner.indentify_by_first():
                 if self._check_if_actually_fish_catching():
-                    break
+                    return True
+
                 CommonIOController.press_mouse_right_button()
                 CommonIOController.release_mouse_right_button()
-                return
+                return False
 
             time.sleep(0.1)
         else:
-            print('SOMETHING WENT WRONG')
-            return
+            FISHER_BOT_LOGGER.warning(
+                'CANNOT FIND BOBBER ON CATCHING BAR WHEN PREPARING FOR CATCHING'
+            )
+            return False
+
+    def _catch_fish(self) -> None:
+
+        FISHER_BOT_LOGGER.info('CATCHING FISH')
 
         while True:
-            bobber_coord = self._catching_bobber_scanner.indentify_by_first()
+            if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
 
-            print(CommonIOController.mouse_left_button_is_pressed)
+                bobber_pos = bobber_coord.x - bobber_coord.region.width // 2
+                need_to_pool = bobber_pos <= self._catching_bar_mouse_hold_threshold
 
-            if bobber_coord:
+                FISHER_BOT_LOGGER.debug(
+                    f'NEED TO POOL BOBBER => {need_to_pool}\n\t'
+                    f'BOBBER POSITION: {bobber_pos} <= CATCHING MOUSE THRESHOLD: {self._catching_bar_mouse_hold_threshold}'
+                )
 
-                print((
-                    f'FOUND BOBBER ON CATCHING BAR => '
-                    f'X: {bobber_coord.x} '
-                    f'Y: {bobber_coord.y}\n\t'
-                    f'REGION: {bobber_coord.region}'
-                ))
-
-                print(bobber_coord.x - bobber_coord.region.width // 2,
-                      self._catching_bar_mouse_hold_threshold)
-
-                if bobber_coord.x - bobber_coord.region.width // 2 <= self._catching_bar_mouse_hold_threshold:
+                if need_to_pool:
                     CommonIOController.press_mouse_left_button()
                 else:
                     CommonIOController.release_mouse_left_button()
             else:
+                FISHER_BOT_LOGGER.info('CATCHED')
                 CommonIOController.release_mouse_left_button()
                 break
 
@@ -257,6 +284,11 @@ class FisherBot:
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing(static_mouse_pos)
             self._catch_when_fish_awaiting()
-            self._catch_fish()
-            print('awaiting for new fishing...')
-            time.sleep(2)
+
+            if self._prepare_for_catching():
+                self._catch_fish()
+
+            FISHER_BOT_LOGGER.info(
+                f'WAITING "{settings.NEW_FISH_CATCHING_AWAITING}" SECONDS BEFORE NEW CATCHING'
+            )
+            time.sleep(settings.NEW_FISH_CATCHING_AWAITING)

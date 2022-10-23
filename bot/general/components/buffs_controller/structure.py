@@ -5,6 +5,7 @@ from pynput.mouse import Button
 from .schemas import BuffConfig, BuffInfo
 from ..world_to_screen import TemplateScanner
 from ..io_controllers import CommonIOController
+from ...services.logger import COMPONENTS_LOGGER
 
 
 class Buff:
@@ -37,16 +38,18 @@ class Buff:
 
     @property
     def is_active(self) -> bool:
-        print(f'{self._buff_config.name} IS ACTIVE CHECKING')
         condition = self._is_active_scanner.get_condition_by_one()
-        print(f'{self._buff_config.name} IS ACTIVE => {condition}')
+        COMPONENTS_LOGGER.info(
+            f'"{self._buff_config.name}" BUFF IS ACTIVE => {condition}'
+        )
         return condition
 
     @property
     def is_available_to_activate(self) -> bool:
-        print(f'{self._buff_config.name} IS AVAILABLE TO ACTIVATE CHECKING')
         condition = not self._empty_slot_scanner.get_condition_by_one()
-        print(f'{self._buff_config.name} IS AVAILABLE TO ACTIVATE => {condition}')
+        COMPONENTS_LOGGER.info(
+            f'"{self._buff_config.name}" BUFF IS AVAILABLE TO ACTIVATE => {condition}'
+        )
         return condition
 
     def find_and_set_item(self, inventory_part_image: np.ndarray) -> bool:

@@ -8,8 +8,8 @@ from pynput.keyboard import KeyCode
 from .structure import Buff
 from ..settings import settings
 from ..templates import CompiledTemplate, to_cvt_color
-from ..world_to_screen import TemplateScanner, Coordinate, grab_screen
 from ..io_controllers import CommonIOController, ScrollDirection
+from ..world_to_screen import TemplateScanner, Coordinate, grab_screen
 
 BUFF_COOLDOWN: float = 1.0
 ITEM_USED_TO_UTILITY_BAR_COOLDOWN: float = 10.0

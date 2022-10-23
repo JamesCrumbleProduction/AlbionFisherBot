@@ -14,7 +14,7 @@ def _define_monitor_region() -> Region:
             if monitor.width == 1024 and monitor.height == 768:
                 return Region(left=0, top=0, width=monitor.width, height=monitor.height)
 
-            raise WrongScreenResolution('Suppport only 1024x768 screen resolution')  # noqa
+            raise WrongScreenResolution('Support only 1024x768 screen resolution')  # noqa
 
     raise MonitorDefiningError('Cannot define default monitor region...')
 
@@ -26,9 +26,7 @@ def validate_region(region: Region = None) -> Region:
     elif type(region) is Region:
         return region
 
-    raise NotImplementedError(
-        'Region should have type of Region class'
-    )
+    raise NotImplementedError('Region should have type of Region class')
 
 
 def grab_screen(region: Region) -> ndarray:

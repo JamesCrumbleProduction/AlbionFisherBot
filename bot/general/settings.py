@@ -1,7 +1,14 @@
+import logging
+
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
+
+    LOGGING_LEVEL: int = logging.DEBUG
+    LOGGING_FILENAME: str = 'logging.log'
+    CLEAR_LOGGING_FILE_SIZE_LIMIT: int = 10  # MB
+
     # fishing rod throwing delay
     THROW_DELAYS: list[float] = [
         0.4, 0.45,
@@ -10,6 +17,7 @@ class Settings(BaseSettings):
         0.7, 0.75,
         0.8,
     ]
+    NEW_FISH_CATCHING_AWAITING: float = 2.0
     CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
     BOBBER_CATCH_THRESHOLD: int = 40  # in percentage
 
