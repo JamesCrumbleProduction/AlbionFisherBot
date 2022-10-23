@@ -6,6 +6,7 @@ from typing import Iterator
 from pynput.keyboard import KeyCode
 
 from .structure import Buff
+from .schemas import BuffInfo
 from ..settings import settings
 from ..templates import CompiledTemplate, to_cvt_color
 from ..io_controllers import CommonIOController, ScrollDirection
@@ -129,6 +130,6 @@ class BuffsController:
                 self._activate_buff(buff)
 
     @property
-    def buffs(self) -> Iterator[Buff]:
+    def buffs(self) -> Iterator[BuffInfo]:
         for buff in self._buffs:
             yield buff.buff_info

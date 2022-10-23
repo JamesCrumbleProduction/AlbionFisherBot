@@ -85,5 +85,5 @@ class Buff:
         return BuffInfo(
             name=self._buff_config.name,
             is_active=self._cached_is_active,
-            is_available_to_activate=self._have_buff_item
+            have_buff_item=self._have_buff_item
         )

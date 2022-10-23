@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
     BOBBER_CATCH_THRESHOLD: int = 40  # in percentage
 
+    SERVER_PORT: int = 4000
+    SERVER_HOST: str = '0.0.0.0'
+
     assert 0 <= BOBBER_CATCH_THRESHOLD <= 100
 
 

@@ -1,18 +1,24 @@
 import time
 import random
 
+from typing import Iterator
+
 from .settings import settings
 from .services.logger import FISHER_BOT_LOGGER
+from .components.events_loop import EventsLoop
+from .components.info_interface import InfoInterface
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.settings import settings as componenets_settings
-from .components.buffs_controller import Buff, BuffConfig, BuffsController
+from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import TemplateScanner, HSVBobberScanner, Region, Coordinate
 
 
-class FisherBot:
+class FisherBot(InfoInterface):
 
     __slots__ = (
+        'is_running',
+        '_events_loop',
         '_bobber_scanner',
         '_buffs_controller',
         '_hsv_bobber_scanner',
@@ -23,10 +29,18 @@ class FisherBot:
     )
 
     def __init__(self) -> None:
+        super().__init__()
+
+        self.is_running: bool = True
+        self._events_loop = EventsLoop()
 
         self._init_bobber_scanners()
         self._init_catching_scanners()
         self._init_buffs_controller()
+
+    @property
+    def buffs(self) -> Iterator[BuffInfo]:
+        yield from self._buffs_controller.buffs
 
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
@@ -43,11 +57,11 @@ class FisherBot:
         FISHER_BOT_LOGGER.debug('INITING CATCHING SCANNERS')
         self._catching_bar_mouse_hold_threshold = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.75
+            componenets_settings.REGIONS.CATCHING_BAR.width * 0.65
         )
         self._is_fish_checking_threshold = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
+            componenets_settings.REGIONS.CATCHING_BAR.width * 0.5
         )
         self._fish_catching_distance_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
@@ -200,14 +214,15 @@ class FisherBot:
                     break
 
             time.sleep(0.1)
-        time.sleep(0.1)
+        time.sleep(0.3)
 
         FISHER_BOT_LOGGER.info('CHECKING FOR ACTUALLY FISH')
 
         last_fish_distance_pos = self._fish_catching_distance_scanner.indentify_by_first()
         if last_fish_distance_pos is None:
             FISHER_BOT_LOGGER.warning(
-                'CANNOT FIND "last_fish_distance_pos" ...')
+                'CANNOT FIND "last_fish_distance_pos" ...'
+            )
             return False
 
         last_fish_distance_pos = (
@@ -241,6 +256,7 @@ class FisherBot:
 
                 CommonIOController.press_mouse_right_button()
                 CommonIOController.release_mouse_right_button()
+                self._skipped_non_fishes += 1
                 return False
 
             time.sleep(0.1)
@@ -272,15 +288,17 @@ class FisherBot:
             else:
                 FISHER_BOT_LOGGER.info('CATCHED')
                 CommonIOController.release_mouse_left_button()
+                self._catched_fishes += 1
                 break
 
             time.sleep(0.1)
 
     def run(self) -> None:
-        time.sleep(2)
         static_mouse_pos = CommonIOController.mouse_position()
 
         while True:
+            self._events_loop(self)
+
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing(static_mouse_pos)
             self._catch_when_fish_awaiting()
@@ -292,3 +310,6 @@ class FisherBot:
                 f'WAITING "{settings.NEW_FISH_CATCHING_AWAITING}" SECONDS BEFORE NEW CATCHING'
             )
             time.sleep(settings.NEW_FISH_CATCHING_AWAITING)
+
+
+FISHER_BOT = FisherBot()
