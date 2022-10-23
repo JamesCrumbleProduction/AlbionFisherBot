@@ -16,7 +16,7 @@ def main() -> int:
             port=settings.SERVER_PORT
         )
         FISHER_BOT.run()
-    except (Exception, KeyboardInterrupt) as exception:
+    except Exception as exception:
         ...
     finally:
         FISHER_BOT.is_running = False

@@ -1,17 +1,13 @@
 from fastapi import APIRouter
-from typing import TYPE_CHECKING
 
 from .schemas import BotInfo
+from ...bot import FisherBot
 from ...components.schemas import Status
-
-
-if TYPE_CHECKING:
-    from ...bot import FisherBot
 
 
 class BotInfoApiRouter(APIRouter):
 
-    def __init__(self, bot_instance: 'FisherBot', *args, **kwargs):
+    def __init__(self, bot_instance: FisherBot, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.add_api_route(
