@@ -8,7 +8,7 @@ from pynput.keyboard import KeyCode
 from .structure import Buff
 from ..settings import settings
 from ..templates import CompiledTemplate, to_cvt_color
-from ..world_to_screen import TemplateScanner, grab_screen
+from ..world_to_screen import TemplateScanner, Coordinate, grab_screen
 from ..io_controllers import CommonIOController, ScrollDirection
 
 BUFF_COOLDOWN: float = 1.0
@@ -41,10 +41,10 @@ class BuffsController:
         return grab_screen(settings.REGIONS.INVENTORY)
 
     def _iterate_through_inventory(self) -> Iterator[np.ndarray]:
-        CommonIOController.move(
-            settings.REGIONS.INVENTORY.left + random.randint(3, 10),
-            settings.REGIONS.INVENTORY.top + random.randint(3, 10)
-        )
+        CommonIOController.move(Coordinate(
+            x=settings.REGIONS.INVENTORY.left + random.randint(3, 10),
+            y=settings.REGIONS.INVENTORY.top + random.randint(3, 10)
+        ))
 
         past_inventory_image = self._grab_inventory_region_img()
         yield past_inventory_image
@@ -58,15 +58,15 @@ class BuffsController:
             if TemplateScanner(CompiledTemplate(
                 label='',
                 template_data=to_cvt_color(past_inventory_image)
-            ), threshold=0.97)(as_custom_image=new_inventory_image).get_condition_by_one():
+            ), threshold=0.95)(as_custom_image=new_inventory_image).get_condition_by_one():
                 break
 
             yield new_inventory_image
+            past_inventory_image = new_inventory_image
             CommonIOController.scroll(1, ScrollDirection.DOWN)
             time.sleep(1.5)
 
     def _set_items_to_utility_bar(self, initing_buffs: list[Buff]) -> tuple[float | None, list[Buff]]:
-        past_mouse_position = CommonIOController.mouse_position()
         self._open_inventory()
 
         setted_buffs: list[Buff] = list()
@@ -87,15 +87,17 @@ class BuffsController:
                         first_setted_buff_time = time.time()
 
             if len(setted_buffs) == len(initing_buffs):
-                CommonIOController.move(past_mouse_position)
                 self._close_inventory()
                 return first_setted_buff_time, setted_buffs
 
-        CommonIOController.move(past_mouse_position)
+        for buff in initing_buffs:
+            if not setted_buffs_contains(buff):
+                buff.have_buff_item = False
+
         self._close_inventory()
         return first_setted_buff_time, setted_buffs
 
-    def _activate_buff(buff: Buff) -> None:
+    def _activate_buff(self, buff: Buff) -> None:
         CommonIOController.press(buff.activation_key)
         time.sleep(BUFF_COOLDOWN)
 
@@ -105,10 +107,11 @@ class BuffsController:
 
         for buff in self._buffs:
             if buff.have_buff_item:
-                if not buff.is_active and buff.is_available_to_activate:
-                    self._activate_buff(buff)
-                else:
-                    need_to_init_buffs.append(buff)
+                if not buff.is_active:
+                    if buff.is_available_to_activate:
+                        self._activate_buff(buff)
+                    else:
+                        need_to_init_buffs.append(buff)
 
         if need_to_init_buffs:
             first_setted_buff_time, setted_buffs = self._set_items_to_utility_bar(
@@ -117,9 +120,9 @@ class BuffsController:
 
             if first_setted_buff_time is not None:
                 time.sleep(
-                    ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (
+                    max(0, ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (
                         time.time() - first_setted_buff_time
-                    )
+                    ))
                 )
 
             for buff in setted_buffs:

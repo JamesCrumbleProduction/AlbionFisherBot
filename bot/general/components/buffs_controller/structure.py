@@ -37,11 +37,17 @@ class Buff:
 
     @property
     def is_active(self) -> bool:
-        return self._is_active_scanner.get_condition_by_one()
+        print(f'{self._buff_config.name} IS ACTIVE CHECKING')
+        condition = self._is_active_scanner.get_condition_by_one()
+        print(f'{self._buff_config.name} IS ACTIVE => {condition}')
+        return condition
 
     @property
     def is_available_to_activate(self) -> bool:
-        return not self._empty_slot_scanner.get_condition_by_one()
+        print(f'{self._buff_config.name} IS AVAILABLE TO ACTIVATE CHECKING')
+        condition = not self._empty_slot_scanner.get_condition_by_one()
+        print(f'{self._buff_config.name} IS AVAILABLE TO ACTIVATE => {condition}')
+        return condition
 
     def find_and_set_item(self, inventory_part_image: np.ndarray) -> bool:
         for coord in self._in_inventory_item_scanner(

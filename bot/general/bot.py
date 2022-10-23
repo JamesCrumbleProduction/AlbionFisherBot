@@ -6,6 +6,7 @@ from .services.logger import FISHER_BOT_LOGGER
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.settings import settings as componenets_settings
+from .components.buffs_controller import Buff, BuffConfig, BuffsController
 from .components.world_to_screen import TemplateScanner, HSVBobberScanner, Region, Coordinate
 
 
@@ -13,8 +14,8 @@ class FisherBot:
 
     __slots__ = (
         '_bobber_scanner',
+        '_buffs_controller',
         '_hsv_bobber_scanner',
-        '_bobber_pixels_threshold',
         '_catching_bobber_scanner',
         '_is_fish_checking_threshold',
         '_fish_catching_distance_scanner',
@@ -23,7 +24,11 @@ class FisherBot:
 
     def __init__(self) -> None:
 
-        self._bobber_pixels_threshold: int = None
+        self._init_bobber_scanners()
+        self._init_catching_scanners()
+        self._init_buffs_controller()
+
+    def _init_bobber_scanners(self) -> None:
         self._hsv_bobber_scanner = HSVBobberScanner(
             componenets_settings.HSV_CONFIGS.Bobber.LOWER_HSV_ARRAY,
             componenets_settings.HSV_CONFIGS.Bobber.HIGHER_HSV_ARRAY
@@ -33,6 +38,7 @@ class FisherBot:
             threshold=0.6
         )
 
+    def _init_catching_scanners(self) -> None:
         self._catching_bar_mouse_hold_threshold = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
             componenets_settings.REGIONS.CATCHING_BAR.width * 0.75
@@ -44,12 +50,56 @@ class FisherBot:
         self._fish_catching_distance_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'fish_catched_distance'
-            ), threshold=0.6, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
         )
         self._catching_bobber_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'bobber_status_bar'
-            ), threshold=0.6, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
+        )
+
+    def _init_buffs_controller(self) -> None:
+        bait_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('bait')
+        eat_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('eat')
+
+        self._buffs_controller = BuffsController(
+            Buff(
+                buff_config=BuffConfig(
+                    name=bait_buff.name,
+                    activation_key='o'
+                ),
+                is_active_scanner=TemplateScanner(
+                    iterable_templates=bait_buff.is_active,
+                    threshold=0.8, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                ),
+                empty_slot_scanner=TemplateScanner(
+                    bait_buff.empty_slot,
+                    threshold=0.8, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                ),
+                in_inventory_item_scanner=TemplateScanner(
+                    bait_buff.item,
+                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                )
+            ),
+            # TODO: update templates for this buff
+            # Buff(
+            #     buff_config=BuffConfig(
+            #         name=eat_buff.name,
+            #         activation_key='p'
+            #     ),
+            #     is_active_scanner=TemplateScanner(
+            #         iterable_templates=eat_buff.is_active,
+            #         threshold=0.8, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+            #     ),
+            #     empty_slot_scanner=TemplateScanner(
+            #         eat_buff.empty_slot,
+            #         threshold=0.8, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+            #     ),
+            #     in_inventory_item_scanner=TemplateScanner(
+            #         eat_buff.item,
+            #         threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+            #     )
+            # )
         )
 
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
@@ -127,9 +177,9 @@ class FisherBot:
             if coord := self._catching_bobber_scanner.indentify_by_first():
                 print(
                     coord.x - coord.region.width // 2,
-                    self._catching_bar_mouse_hold_threshold
+                    self._is_fish_checking_threshold
                 )
-                if coord.x - coord.region.width // 2 >= self._catching_bar_mouse_hold_threshold:
+                if coord.x - coord.region.width // 2 >= self._is_fish_checking_threshold:
                     CommonIOController.release_mouse_left_button()
                     break
 
@@ -151,13 +201,15 @@ class FisherBot:
                 if coord.x - coord.region.width // 2 != last_coord.x - last_coord.region.width // 2:
                     return True
 
+            time.sleep(0.05)
+
         return False
 
     def _catch_fish(self) -> None:
 
         print('CATCHING FISH')
 
-        while True:
+        for _ in range(10):
             if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
                 if self._check_if_actually_fish_catching():
                     break
@@ -166,6 +218,9 @@ class FisherBot:
                 return
 
             time.sleep(0.1)
+        else:
+            print('SOMETHING WENT WRONG')
+            return
 
         while True:
             bobber_coord = self._catching_bobber_scanner.indentify_by_first()
@@ -196,12 +251,12 @@ class FisherBot:
 
     def run(self) -> None:
         time.sleep(2)
-
         static_mouse_pos = CommonIOController.mouse_position()
 
         while True:
+            self._buffs_controller.check_and_activate_buffs()
+            self._select_new_mouse_position_for_fishing(static_mouse_pos)
             self._catch_when_fish_awaiting()
             self._catch_fish()
             print('awaiting for new fishing...')
-            self._select_new_mouse_position_for_fishing(static_mouse_pos)
             time.sleep(2)

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
         0.7, 0.75,
         0.8,
     ]
-    CATCHING_AREA_RANGE: tuple[int, int] = (30, 30)  # (x, y)
+    CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
     BOBBER_CATCH_THRESHOLD: int = 40  # in percentage
 
     assert 0 <= BOBBER_CATCH_THRESHOLD <= 100
