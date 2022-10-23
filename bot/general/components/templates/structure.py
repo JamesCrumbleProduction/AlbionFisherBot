@@ -32,6 +32,7 @@ class BuffsCompiledTemplates:
     def get(self, buff_name: str) -> BuffCompiledTemplates:
         return self._compiled_buffs[buff_name]
 
+    @property
     def buffs(self) -> Iterator[BuffCompiledTemplates]:
         for buff in self._compiled_buffs.values():
             yield buff

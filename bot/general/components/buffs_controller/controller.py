@@ -1,17 +1,18 @@
 import time
+import random
 import numpy as np
 
 from typing import Iterator
 from pynput.keyboard import KeyCode
 
-
 from .structure import Buff
+from ..settings import settings
 from ..templates import CompiledTemplate, to_cvt_color
 from ..world_to_screen import TemplateScanner, grab_screen
 from ..io_controllers import CommonIOController, ScrollDirection
 
 BUFF_COOLDOWN: float = 1.0
-ITEM_USED_TO_UTILITY_BAR_COOLDOWN: float = 8.0
+ITEM_USED_TO_UTILITY_BAR_COOLDOWN: float = 10.0
 OPEN_INVENTORY_KEYCODE: KeyCode = KeyCode.from_char('i')
 
 
@@ -36,17 +37,23 @@ class BuffsController:
             CommonIOController.press(OPEN_INVENTORY_KEYCODE)
             self._inventory_is_opened = False
 
-    def _iterate_through_inventory(self) -> Iterator[np.ndarray]:
-        CommonIOController.move()  # Inventory region + 3 pixels gap inside
+    def _grab_inventory_region_img(self) -> np.ndarray:
+        return grab_screen(settings.REGIONS.INVENTORY)
 
-        past_inventory_image = grab_screen()  # Inventory region
+    def _iterate_through_inventory(self) -> Iterator[np.ndarray]:
+        CommonIOController.move(
+            settings.REGIONS.INVENTORY.left + random.randint(3, 10),
+            settings.REGIONS.INVENTORY.top + random.randint(3, 10)
+        )
+
+        past_inventory_image = self._grab_inventory_region_img()
         yield past_inventory_image
         CommonIOController.scroll(1, ScrollDirection.DOWN)
         time.sleep(1.5)
 
         while True:
 
-            new_inventory_image = grab_screen()
+            new_inventory_image = self._grab_inventory_region_img()
 
             if TemplateScanner(CompiledTemplate(
                 label='',
@@ -63,7 +70,7 @@ class BuffsController:
         self._open_inventory()
 
         setted_buffs: list[Buff] = list()
-        last_setted_buff_time: float = None
+        first_setted_buff_time: float = None
 
         def setted_buffs_contains(buff: Buff) -> bool:
             for setted_buff in setted_buffs:
@@ -76,16 +83,17 @@ class BuffsController:
             for buff in initing_buffs:
                 if not setted_buffs_contains(buff) and buff.find_and_set_item(inventory_part_image):
                     setted_buffs.append(buff)
-                    last_setted_buff_time = time.time()
+                    if first_setted_buff_time is None:
+                        first_setted_buff_time = time.time()
 
             if len(setted_buffs) == len(initing_buffs):
                 CommonIOController.move(past_mouse_position)
                 self._close_inventory()
-                return last_setted_buff_time, setted_buffs
+                return first_setted_buff_time, setted_buffs
 
         CommonIOController.move(past_mouse_position)
         self._close_inventory()
-        return last_setted_buff_time, setted_buffs
+        return first_setted_buff_time, setted_buffs
 
     def _activate_buff(buff: Buff) -> None:
         CommonIOController.press(buff.activation_key)
@@ -103,17 +111,19 @@ class BuffsController:
                     need_to_init_buffs.append(buff)
 
         if need_to_init_buffs:
-            last_setted_buff_time, setted_buffs = self._set_items_to_utility_bar(
+            first_setted_buff_time, setted_buffs = self._set_items_to_utility_bar(
                 need_to_init_buffs
             )
 
-            if last_setted_buff_time is not None:
-                time.sleep(ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (
-                    time.time() - last_setted_buff_time
-                ))
+            if first_setted_buff_time is not None:
+                time.sleep(
+                    ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (
+                        time.time() - first_setted_buff_time
+                    )
+                )
 
-                for buff in setted_buffs:
-                    self._activate_buff(buff)
+            for buff in setted_buffs:
+                self._activate_buff(buff)
 
     @property
     def buffs(self) -> Iterator[Buff]:
