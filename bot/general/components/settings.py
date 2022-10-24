@@ -12,12 +12,12 @@ class HSVConfigs(BaseSettings):
     class Bobber:
         # [Hmin, Smin, Vmin]
         LOWER_HSV_ARRAY = np.array(
-            [0, 157, 206],
+            [0, 167, 180],  # old [0, 157, 206]
             dtype=np.uint8, copy=False
         )
         # [Hmax, Smax, Vmax]
         HIGHER_HSV_ARRAY = np.array(
-            [3, 224, 255],
+            [179, 219, 255],  # old [3, 224, 255]
             dtype=np.uint8, copy=False
         )
 
