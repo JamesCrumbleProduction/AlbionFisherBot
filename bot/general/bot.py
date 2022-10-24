@@ -84,15 +84,15 @@ class FisherBot(InfoInterface):
             Buff(
                 buff_config=BuffConfig(
                     name=bait_buff.name,
-                    activation_key='o'
+                    activation_key='1'
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=bait_buff.is_active,
-                    threshold=0.8, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     bait_buff.empty_slot,
-                    threshold=0.8, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
                 ),
                 in_inventory_item_scanner=TemplateScanner(
                     bait_buff.item,
@@ -103,15 +103,15 @@ class FisherBot(InfoInterface):
             # Buff(
             #     buff_config=BuffConfig(
             #         name=eat_buff.name,
-            #         activation_key='p'
+            #         activation_key='2'
             #     ),
             #     is_active_scanner=TemplateScanner(
             #         iterable_templates=eat_buff.is_active,
-            #         threshold=0.8, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+            #         threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
             #     ),
             #     empty_slot_scanner=TemplateScanner(
             #         eat_buff.empty_slot,
-            #         threshold=0.8, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+            #         threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
             #     ),
             #     in_inventory_item_scanner=TemplateScanner(
             #         eat_buff.item,
