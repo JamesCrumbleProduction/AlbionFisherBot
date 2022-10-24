@@ -22,6 +22,7 @@ class FisherBot(InfoInterface):
         '_bobber_scanner',
         '_buffs_controller',
         '_hsv_bobber_scanner',
+        '_custom_catching_region',
         '_catching_bobber_scanner',
         '_fish_catching_distance_scanner',
         '_is_fish_checking_threshold_left',
@@ -33,7 +34,9 @@ class FisherBot(InfoInterface):
         super().__init__()
 
         self.is_running: bool = True
-        self._events_loop = EventsLoop()
+        self._events_loop = EventsLoop(self)
+
+        self._custom_catching_region: Region = None
 
         self._init_bobber_scanners()
         self._init_catching_scanners()
@@ -42,6 +45,12 @@ class FisherBot(InfoInterface):
     @property
     def buffs(self) -> Iterator[BuffInfo]:
         yield from self._buffs_controller.buffs
+
+    def set_new_catching_region(self, new_region: Region):
+        self._custom_catching_region = new_region
+        FISHER_BOT_LOGGER.info(
+            f'NEW "{self._custom_catching_region}" CATCHING REGION WAS SETTED UP'
+        )
 
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
@@ -180,14 +189,24 @@ class FisherBot(InfoInterface):
             time.sleep(0.1)
 
     def _select_new_mouse_position_for_fishing(self, static_mouse_pos: Coordinate) -> None:
-        x_new = static_mouse_pos.x + random.randint(
-            -settings.CATCHING_AREA_RANGE[0], settings.CATCHING_AREA_RANGE[0]
-        )
-        y_new = static_mouse_pos.y + random.randint(
-            -settings.CATCHING_AREA_RANGE[1], settings.CATCHING_AREA_RANGE[1]
-        )
-        new_pos = Coordinate(x=x_new, y=y_new)
-        CommonIOController.move(new_pos)
+        if self._custom_catching_region is None:
+            x_new = max(0, static_mouse_pos.x + random.randint(
+                -settings.CATCHING_AREA_RANGE[0], settings.CATCHING_AREA_RANGE[0]
+            ))
+            y_new = max(0, static_mouse_pos.y + random.randint(
+                -settings.CATCHING_AREA_RANGE[1], settings.CATCHING_AREA_RANGE[1]
+            ))
+        else:
+            x_new = random.randint(
+                self._custom_catching_region.left,
+                self._custom_catching_region.width
+            )
+            y_new = random.randint(
+                self._custom_catching_region.top,
+                self._custom_catching_region.height
+            )
+
+        CommonIOController.move(Coordinate(x=x_new, y=y_new))
 
     def _check_if_actually_fish_catching(self) -> bool:
         FISHER_BOT_LOGGER.info('CHECKING IF ACTUALLY FISH CATCHING')
@@ -304,7 +323,7 @@ class FisherBot(InfoInterface):
         static_mouse_pos = CommonIOController.mouse_position()
 
         while True:
-            self._events_loop(self)
+            self._events_loop()
 
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing(static_mouse_pos)
