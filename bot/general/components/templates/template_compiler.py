@@ -4,31 +4,12 @@ import cv2
 from numpy import ndarray
 from typing import Iterable, Iterator
 
-from .structure import CompiledTemplate
-from .raw_templates.structure import RawTemplate
+from .schemas import CompiledTemplate
+from .raw_templates.schemas import RawTemplate
 
 
-class CompiledTemplates:
-
-    __slots__ = '_compiled_templates',
-
-    def __init__(self, compiled_templates: Iterable[CompiledTemplate]):
-        self._compiled_templates = {
-            template.label: template
-            for template in compiled_templates
-        }
-
-    def get(self, label: str) -> CompiledTemplate:
-        return self._compiled_templates[label]
-
-    @property
-    def content(self) -> dict[str, CompiledTemplate]:
-        return self._compiled_templates
-
-    @property
-    def templates(self) -> Iterator[CompiledTemplate]:
-        for template in self._compiled_templates.values():
-            yield template
+def to_cvt_color(raw_image: ndarray) -> ndarray:
+    return cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
 
 
 class TemplateCompiler:
@@ -49,10 +30,7 @@ class TemplateCompiler:
         self,
         valided_template: RawTemplate
     ) -> ndarray:
-        return cv2.cvtColor(
-            cv2.imread(valided_template.path),
-            cv2.COLOR_BGR2RGB
-        )
+        return to_cvt_color(cv2.imread(valided_template.path))
 
     def _validate_images_paths(self, raw_templates: Iterable[RawTemplate]) -> Iterator[RawTemplate]:
         for template in raw_templates:
@@ -60,5 +38,5 @@ class TemplateCompiler:
                 yield template
             else:
                 raise NotImplementedError(
-                    f'Template with {template.label} label have uncorrected path: \n\t --> {template.path}'
+                    f'Template with {template.label} label have uncorrected path: \n\t => {template.path}'
                 )

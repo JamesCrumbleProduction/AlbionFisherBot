@@ -1,14 +1,15 @@
 import time
-import pyperclip
+import random
 
-from pynput.keyboard import Key
 from pynput.mouse import Button
+from pynput.keyboard import Key, KeyCode
 from pynput.mouse import Controller as MouseController
 from pynput.keyboard import Controller as KeyboardController
 
-from .structure import IterateByAxis
+from .exceptions import UnknownScrollDirection
+from .schemas import IterateByAxis, ScrollDirection
+from ..settings import settings
 from ..world_to_screen import Coordinate
-from ...settings import settings
 
 
 MOUSE = MouseController()
@@ -18,13 +19,38 @@ KEYBOARD = KeyboardController()
 class CommonIOController:
 
     mouse_left_button_is_pressed: bool = False
+    mouse_right_button_is_pressed: bool = False
 
     @staticmethod
     def move(coordinate: Coordinate) -> None:
-        MOUSE.position = coordinate.tuple_format()
+        # Looks like Albion have something to detect fast moving
+        # MOUSE.position = coordinate.tuple_format()
+        CommonIOController.smooth_move(coordinate)
 
     @staticmethod
-    def press(key: Key) -> None:
+    def smooth_move(coordinate: Coordinate) -> None:
+        x_start, y_start = MOUSE.position
+        x_finish, y_finish = coordinate.tuple_format()
+
+        total_time: float = settings.IO_SERVICE.MOUSE_MOVING_TIME_RANGES[
+            random.randint(
+                0, len(settings.IO_SERVICE.MOUSE_MOVING_TIME_RANGES) - 1
+            )
+        ]
+
+        dx: float = (x_finish - x_start) / settings.IO_SERVICE.DRAW_STEPS
+        dy: float = (y_finish - y_start) / settings.IO_SERVICE.DRAW_STEPS
+        dt: float = total_time / settings.IO_SERVICE.DRAW_STEPS
+
+        for step in range(settings.IO_SERVICE.DRAW_STEPS):
+            MOUSE.position = (
+                int(x_start + dx * step),
+                int(y_start + dy * step)
+            )
+            time.sleep(dt)
+
+    @staticmethod
+    def press(key: str | Key | KeyCode) -> None:
         KEYBOARD.press(key)
         KEYBOARD.release(key)
 
@@ -44,12 +70,12 @@ class CommonIOController:
         CommonIOController.grab()
 
     @staticmethod
-    def move_and_click(coordinate: Coordinate) -> None:
+    def move_and_click(coordinate: Coordinate, button: Button) -> None:
 
         CommonIOController.move(coordinate)
         time.sleep(settings.IO_SERVICE.CLICK_INTERVAL)
 
-        MOUSE.click(Button.left)
+        MOUSE.click(button)
         time.sleep(settings.IO_SERVICE.CLICK_INTERVAL)
 
     @staticmethod
@@ -87,6 +113,36 @@ class CommonIOController:
         if CommonIOController.mouse_left_button_is_pressed is True:
             MOUSE.release(Button.left)
             CommonIOController.mouse_left_button_is_pressed = False
+
+    @staticmethod
+    def press_mouse_right_button() -> None:
+        if CommonIOController.mouse_right_button_is_pressed is False:
+            MOUSE.press(Button.right)
+            CommonIOController.mouse_right_button_is_pressed = True
+
+    @staticmethod
+    def release_mouse_right_button() -> None:
+        if CommonIOController.mouse_right_button_is_pressed is True:
+            MOUSE.release(Button.right)
+            CommonIOController.mouse_right_button_is_pressed = False
+
+    def scroll(steps: int, direction: ScrollDirection) -> None:
+        match direction:
+            case ScrollDirection.UP:
+                steps = +steps
+            case ScrollDirection.DOWN:
+                steps = -steps
+            case _:
+                raise UnknownScrollDirection(
+                    f'Unknown scroll direction => {direction}'
+                )
+
+        MOUSE.scroll(0, steps)
+
+    @staticmethod
+    def mouse_position() -> Coordinate:
+        pos = MOUSE.position
+        return Coordinate(x=pos[0], y=pos[1])
 
 
 class IterateIOController:

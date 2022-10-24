@@ -1,2 +1,2 @@
-class ClipboardEnterError(BaseException):
+class UnknownScrollDirection(BaseException):
     ...

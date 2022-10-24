@@ -1,48 +1,31 @@
-import numpy as np
+import logging
 
-from dataclasses import dataclass
 from pydantic import BaseSettings
-
-
-class HSVConfigs(BaseSettings):
-
-    @dataclass
-    class Bobber:
-        # [Hmin, Smin, Vmin]
-        LOWER_HSV_ARRAY = np.array(
-            [0, 157, 206],
-            dtype=np.uint8, copy=False
-        )
-        # [Hmax, Smax, Vmax]
-        HIGHER_HSV_ARRAY = np.array(
-            [3, 224, 255],
-            dtype=np.uint8, copy=False
-        )
-
-
-class BotSettings(BaseSettings):
-
-    # fishing rod throwing delay
-    THROW_DELAY: float = 0.6
-    BOBBER_CATCH_THRESHOLD: int = 40  # in percentage
-    MOUSE_CATCHING_BAR_THRESHOLD: int = 60  # in percentage
-    BOBBER_REGION_EXTENDED_PERCENTAGE: int = 30
-
-    assert 0 <= BOBBER_CATCH_THRESHOLD <= 100
-    assert 0 <= MOUSE_CATCHING_BAR_THRESHOLD <= 100
-    assert 0 <= BOBBER_REGION_EXTENDED_PERCENTAGE <= 100
-
-
-class IOServiceSettings(BaseSettings):
-
-    CLICK_INTERVAL: float = 0.1
 
 
 class Settings(BaseSettings):
 
-    BOT = BotSettings()
-    HSV_CONFIGS = HSVConfigs()
-    IO_SERVICE = IOServiceSettings()
+    LOGGING_LEVEL: int = logging.DEBUG
+    LOGGING_FILENAME: str = 'logging.log'
+    CLEAR_LOGGING_FILE_SIZE_LIMIT: int = 10  # MB
+
+    # fishing rod throwing delay
+    THROW_DELAYS: list[float] = [
+        # 0.4, 0.45,
+        # 0.5, 0.55,
+        # 0.6, 0.65,
+        # 0.7, 0.75,
+        1, 1.05, 1.07, 1.073, 1.1
+    ]
+    CANCEL_ANY_ACTION_BUTTON: str = 's'
+    NEW_FISH_CATCHING_AWAITING: float = 1.8
+    CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
+    BOBBER_CATCH_THRESHOLD: int = 40  # in percentage
+
+    SERVER_PORT: int = 4000
+    SERVER_HOST: str = '0.0.0.0'
+
+    assert 0 <= BOBBER_CATCH_THRESHOLD <= 100
 
 
 settings = Settings()
