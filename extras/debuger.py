@@ -179,12 +179,24 @@ def serching_template():
 
 
 def mouse_scroll_listener():
+
+    def on_click(x, y, button, condition):
+        print(x, y, button, condition)
+
     def on_scroll(x, y, dx, dy):
         print(x, y, dx, dy)
         print(f"Scrolled {'down' if dy < 0 else 'up'} by {(x, y)}")
 
-    with Listener(on_scroll=on_scroll) as listener:
-        listener.join()
+    listener = Listener(on_scroll=on_scroll, on_click=on_click)
+    listener.start()
+    for _ in range(50):
+        time.sleep(0.25)
+    listener.stop()
+
+    # with  as listener:
+    #     listener.join()
+    # listener.stop()
+    # print('fewfewfwef')
 
 
-serching_template()
+mouse_scroll_listener()
