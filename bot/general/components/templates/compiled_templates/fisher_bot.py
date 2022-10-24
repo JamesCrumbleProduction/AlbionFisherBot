@@ -35,9 +35,6 @@ class FisherBotCompiledTemplates:
             )
             for buff in RawTemplates.FisherBotRawTemplates.buffs
         ])
-        self._other_templates = CompiledTemplates(TemplateCompiler(
-            RawTemplates.FisherBotRawTemplates.other
-        ).compile_templates())
 
     @property
     def bobbers(self) -> CompiledTemplates:
@@ -50,10 +47,6 @@ class FisherBotCompiledTemplates:
     @property
     def buffs(self) -> BuffsCompiledTemplates:
         return self._buffs
-
-    @property
-    def other_templates(self) -> CompiledTemplates:
-        return self._other_templates
 
 
 FISHER_BOT_COMPILED_TEMPLATES = FisherBotCompiledTemplates()

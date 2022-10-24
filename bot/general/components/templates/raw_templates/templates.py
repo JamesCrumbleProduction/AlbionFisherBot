@@ -81,7 +81,6 @@ class Paths:
         bobbers = os.path.join(__fisher_bot_templates, 'bobbers')
         status_bar_components = os.path.join(__fisher_bot_templates, 'status_bar_components')  # noqa
         buffs = os.path.join(__fisher_bot_templates, 'buffs')
-        other = os.path.join(__fisher_bot_templates, 'other')
 
 
 @dataclass
@@ -92,4 +91,3 @@ class RawTemplates:
         bobbers = templates_generator(Paths.FisherBotTemplates.bobbers)  # noqa
         status_bar_components = templates_generator(Paths.FisherBotTemplates.status_bar_components)  # noqa
         buffs = buff_templates_iterator(Paths.FisherBotTemplates.buffs)
-        other = templates_generator(Paths.FisherBotTemplates.other)
