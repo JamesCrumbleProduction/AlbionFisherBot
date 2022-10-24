@@ -23,8 +23,9 @@ class FisherBot(InfoInterface):
         '_buffs_controller',
         '_hsv_bobber_scanner',
         '_catching_bobber_scanner',
-        '_is_fish_checking_threshold',
         '_fish_catching_distance_scanner',
+        '_is_fish_checking_threshold_left',
+        '_is_fish_checking_threshold_right',
         '_catching_bar_mouse_hold_threshold',
     )
 
@@ -57,11 +58,15 @@ class FisherBot(InfoInterface):
         FISHER_BOT_LOGGER.debug('INITING CATCHING SCANNERS')
         self._catching_bar_mouse_hold_threshold = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.65
+            componenets_settings.REGIONS.CATCHING_BAR.width * 0.7
         )
-        self._is_fish_checking_threshold = int(
+        self._is_fish_checking_threshold_left = int(
             componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.5
+            componenets_settings.REGIONS.CATCHING_BAR.width * 0.4
+        )
+        self._is_fish_checking_threshold_right = int(
+            componenets_settings.REGIONS.CATCHING_BAR.left +
+            componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
         )
         self._fish_catching_distance_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
@@ -99,26 +104,28 @@ class FisherBot(InfoInterface):
                     threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
                 )
             ),
-            # TODO: update templates for this buff
-            # Buff(
-            #     buff_config=BuffConfig(
-            #         name=eat_buff.name,
-            #         activation_key='2'
-            #     ),
-            #     is_active_scanner=TemplateScanner(
-            #         iterable_templates=eat_buff.is_active,
-            #         threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
-            #     ),
-            #     empty_slot_scanner=TemplateScanner(
-            #         eat_buff.empty_slot,
-            #         threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
-            #     ),
-            #     in_inventory_item_scanner=TemplateScanner(
-            #         eat_buff.item,
-            #         threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
-            #     )
-            # )
+            Buff(
+                buff_config=BuffConfig(
+                    name=eat_buff.name,
+                    activation_key='2'
+                ),
+                is_active_scanner=TemplateScanner(
+                    iterable_templates=eat_buff.is_active,
+                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                ),
+                empty_slot_scanner=TemplateScanner(
+                    eat_buff.empty_slot,
+                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                ),
+                in_inventory_item_scanner=TemplateScanner(
+                    eat_buff.item,
+                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                )
+            )
         )
+
+    def _cancel_any_action(self) -> None:
+        CommonIOController.press(settings.CANCEL_ANY_ACTION_BUTTON)
 
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
         bobber_pixels: int = self._hsv_bobber_scanner(
@@ -159,7 +166,7 @@ class FisherBot(InfoInterface):
                 0, len(settings.THROW_DELAYS) - 1
             )]
         )
-        time.sleep(2)
+        time.sleep(1.5)
 
         bobber_region = self._find_bobber_region()
         bobber_offset = self._calc_bobber_offset(bobber_region)
@@ -191,9 +198,9 @@ class FisherBot(InfoInterface):
                 bobber_position = coord.x - coord.region.width // 2
                 FISHER_BOT_LOGGER.debug(
                     f'BOBBER POSITION = "{bobber_position}"\n\t'
-                    f'{bobber_position} <= {self._is_fish_checking_threshold}'
+                    f'{bobber_position} <= {self._is_fish_checking_threshold_left}'
                 )
-                if bobber_position <= self._is_fish_checking_threshold:
+                if bobber_position <= self._is_fish_checking_threshold_left:
                     FISHER_BOT_LOGGER.info('REACHED LEFT BORDER')
                     CommonIOController.press_mouse_left_button()
                     break
@@ -206,15 +213,15 @@ class FisherBot(InfoInterface):
                 bobber_position = coord.x - coord.region.width // 2
                 FISHER_BOT_LOGGER.debug(
                     f'BOBBER POSITION = "{bobber_position}"\n\t'
-                    f'{bobber_position} >= {self._is_fish_checking_threshold}'
+                    f'{bobber_position} >= {self._is_fish_checking_threshold_right}'
                 )
-                if bobber_position >= self._is_fish_checking_threshold:
+                if bobber_position >= self._is_fish_checking_threshold_right:
                     FISHER_BOT_LOGGER.info('REACHED RIGHT BORDER')
                     CommonIOController.release_mouse_left_button()
                     break
 
             time.sleep(0.1)
-        time.sleep(0.3)
+        time.sleep(0.2)
 
         FISHER_BOT_LOGGER.info('CHECKING FOR ACTUALLY FISH')
 
@@ -254,9 +261,9 @@ class FisherBot(InfoInterface):
                 if self._check_if_actually_fish_catching():
                     return True
 
-                CommonIOController.press_mouse_right_button()
-                CommonIOController.release_mouse_right_button()
+                self._cancel_any_action()
                 self._skipped_non_fishes += 1
+
                 return False
 
             time.sleep(0.1)
@@ -305,6 +312,8 @@ class FisherBot(InfoInterface):
 
             if self._prepare_for_catching():
                 self._catch_fish()
+            else:
+                continue
 
             FISHER_BOT_LOGGER.info(
                 f'WAITING "{settings.NEW_FISH_CATCHING_AWAITING}" SECONDS BEFORE NEW CATCHING'

@@ -82,6 +82,14 @@ class Buff:
         return self._buff_config.activation_key
 
     @property
+    def cached_is_active(self) -> bool:
+        return self._cached_is_active
+
+    @cached_is_active.setter
+    def cached_is_active(self, value: bool) -> None:
+        self._cached_is_active = value
+
+    @property
     def buff_info(self) -> BuffInfo:
         return BuffInfo(
             name=self._buff_config.name,

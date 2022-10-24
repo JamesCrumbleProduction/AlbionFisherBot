@@ -1,3 +1,4 @@
+from logging.config import listen
 import os
 import cv2
 import time
@@ -6,6 +7,7 @@ import numpy as np
 from mss import mss
 from pydantic import BaseModel
 from screeninfo import get_monitors
+from pynput.mouse import Listener
 
 
 class ValidatedTemplateData(BaseModel):
@@ -85,6 +87,7 @@ def serching_template():
         height=89,
         width=214
     )
+    ALL_TEMPLATES: bool = True
 
     def region() -> dict:
         for value in REGION.values():
@@ -100,14 +103,24 @@ def serching_template():
         current_path, 'bot', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'buffs', 'bait', 'is_active'
     )
 
-    templates: list[np.ndarray] = [
-        cv2.cvtColor(
-            cv2.imread(
-                template_path.path
-            ), cv2.COLOR_BGR2RGB
+    if ALL_TEMPLATES:
+        templates: list[np.ndarray] = [
+            cv2.cvtColor(
+                cv2.imread(
+                    template_path.path
+                ), cv2.COLOR_BGR2RGB
 
-        ) for template_path in os.scandir(templates_dir)
-    ]
+            ) for template_path in os.scandir(templates_dir)
+        ]
+    else:
+        templates: list[np.ndarray] = [
+            cv2.cvtColor(
+                cv2.imread(
+                    os.path.join(templates_dir, 'item.png')
+                ), cv2.COLOR_BGR2RGB
+
+            )
+        ]
 
     def validate_template(img, template, threshold):
         height, width = template.shape[:-1]
@@ -163,6 +176,15 @@ def serching_template():
             cv2.imwrite('test.png', image)
 
         time.sleep(0.2)
+
+
+def mouse_scroll_listener():
+    def on_scroll(x, y, dx, dy):
+        print(x, y, dx, dy)
+        print(f"Scrolled {'down' if dy < 0 else 'up'} by {(x, y)}")
+
+    with Listener(on_scroll=on_scroll) as listener:
+        listener.join()
 
 
 serching_template()

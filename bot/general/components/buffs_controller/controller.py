@@ -100,6 +100,7 @@ class BuffsController:
 
     def _activate_buff(self, buff: Buff) -> None:
         CommonIOController.press(buff.activation_key)
+        buff.cached_is_active = True
         time.sleep(BUFF_COOLDOWN)
 
     def check_and_activate_buffs(self) -> None:
