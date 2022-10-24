@@ -42,6 +42,7 @@ class Buff:
         COMPONENTS_LOGGER.info(
             f'"{self._buff_config.name}" BUFF IS ACTIVE => {condition}'
         )
+        self._cached_is_active = condition
         return condition
 
     @property
