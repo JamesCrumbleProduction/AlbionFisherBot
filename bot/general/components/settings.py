@@ -58,7 +58,7 @@ class IOServiceSettings(BaseSettings):
         0.25,
         0.3,
     ]
-    DRAW_STEPS: int = 150  # total times to update cursor
+    DRAW_STEPS: int = 40  # total times to update cursor
 
 
 class ComponentsSettings(BaseSettings):
