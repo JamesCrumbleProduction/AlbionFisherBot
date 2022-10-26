@@ -1,3 +1,4 @@
+import logging
 import uvicorn
 
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +18,7 @@ def main() -> int:
         )
         FISHER_BOT.run()
     except Exception as exception:
-        ...
+        logging.critical(exception, exc_info=True)
     finally:
         FISHER_BOT.is_running = False
 

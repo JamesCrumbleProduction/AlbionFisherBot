@@ -1,13 +1,21 @@
-from logging.config import listen
-import os
-import cv2
-import time
-import numpy as np
-
-from mss import mss
-from pydantic import BaseModel
-from screeninfo import get_monitors
 from pynput.mouse import Listener
+from concurrent.futures import Future, ThreadPoolExecutor
+from pynput.mouse import Listener, Controller
+from screeninfo import get_monitors
+from pydantic import BaseModel
+from mss import mss
+import numpy as np
+import time
+import cv2
+import os
+from logging.config import listen
+<< << << < HEAD
+== == == =
+>>>>>> > master
+
+<< << << < HEAD
+== == == =
+>>>>>> > master
 
 
 class ValidatedTemplateData(BaseModel):
@@ -178,6 +186,146 @@ def serching_template():
         time.sleep(0.2)
 
 
+def get_bobber_corner(return_: bool = False) -> dict | None:
+
+    expand_percentage = 5
+    region: dict = dict()
+
+    monitor_res = _define_monitor_region()
+
+    center_x, center_y = monitor_res['width'] // 2, monitor_res['height'] // 2
+
+    while True:
+        mouse_x, mouse_y = Controller().position
+
+        if mouse_y < center_y:
+            if mouse_x < center_x:
+                region = dict(
+                    top=0,
+                    left=0,
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                )
+                # print(f'''LEFT TOP CORNER{region}''')
+            else:
+                region = dict(
+                    top=0,
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                )
+                # print(f'''RIGHT TOP CORNER{region}''')
+        else:
+            if mouse_x < center_x:
+                region = dict(
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
+                    left=0,
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                )
+                # print(f'''LEFT BOTTOM CORNER {region}''')
+            else:
+                region = dict(
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                )
+                # print(f'''RIGHT BOTTOM CORNER{region}''')
+        if return_:
+            return region
+        with mss() as base:
+            image = np.array(base.grab(region), dtype=np.uint8)
+            cv2.imwrite('test.png', image)
+
+        time.sleep(0.2)
+
+
+def check_for_bobbers_templates():
+
+    current_path = os.getcwd()
+    templates_dir = os.path.join(
+        current_path, 'bot', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'bobbers'
+    )
+    executor = ThreadPoolExecutor(max_workers=6)
+
+    templates: list[np.ndarray] = [
+        cv2.cvtColor(
+            cv2.imread(
+                template_path.path
+            ), cv2.COLOR_BGR2RGB
+
+        ) for template_path in os.scandir(templates_dir)
+    ]
+
+    def validate_template(img, template, threshold):
+        height, width = template.shape[:-1]
+        res = cv2.matchTemplate(
+            img,
+            template,
+            cv2.TM_CCOEFF_NORMED
+        )
+        location_y, location_x = np.where(res >= threshold)
+
+        if location_y.size > 0 and location_x.size > 0:
+            return ValidatedTemplateData(
+                location_x=location_x,
+                location_y=location_y,
+                height=height,
+                width=width
+            )
+
+    while True:
+        with mss() as base:
+            image = cv2.cvtColor(
+                np.array(base.grab(get_bobber_corner(return_=True)), dtype=np.uint8),  # noqa
+                cv2.COLOR_BGR2RGB
+            )
+
+            futures: list[tuple[int, Future]] = list()
+
+            passed_templates_data: list = list()
+
+            for i, template in enumerate(templates):
+                future = executor.submit(
+                    validate_template,
+                    image, template, threshold=0.6
+                )
+                futures.append((i, future,))
+
+            while futures:
+                for i, future_info in enumerate(futures):
+                    template_index, future = future_info
+
+                    if future.done():
+                        template_data = future.result()
+
+                        print(
+                            f"TEMPLATE \"{template_index}\" CONDITION => {template_data is not None}"
+                        )
+
+                        if template_data is not None:
+                            passed_templates_data.append(template_data)
+
+                        futures.pop(i)
+                        break
+
+            for template_data in passed_templates_data:
+                for x, y in zip(template_data.location_x, template_data.location_y):
+                    image = cv2.rectangle(
+                        image, (x, y),
+                        (
+                            x + template_data.width,
+                            y + template_data.height
+                        ),
+                        (0, 0, 255), 1
+                    )
+            cv2.imwrite('test.png', image)
+
+        print('SLEEP 2 sec')
+        time.sleep(2)
+
+
 def mouse_scroll_listener():
 
     def on_click(x, y, button, condition):
@@ -193,10 +341,9 @@ def mouse_scroll_listener():
         time.sleep(0.25)
     listener.stop()
 
+
     # with  as listener:
     #     listener.join()
     # listener.stop()
     # print('fewfewfwef')
-
-
-mouse_scroll_listener()
+check_for_bobbers_templates()

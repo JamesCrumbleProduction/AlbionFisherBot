@@ -1,6 +1,6 @@
 import numpy as np
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, validator
 
 
 class ValidatedTemplateData(BaseModel):
@@ -18,6 +18,33 @@ class Region(BaseModel):
     height: int
     left: int
     top: int
+
+
+class HSVRegion(BaseModel):
+
+    lower_range: np.ndarray
+    higher_range: np.ndarray
+
+    class Config:
+        arbitrary_types_allowed = 'allow'
+
+    def validate_range(cls, value: np.ndarray):
+        if len(value) != 3:
+            raise ValidationError(
+                ['length of hsv range should be exactly 3 elements'], cls
+            )
+
+        if 0 >= value[0] >= 179:
+            raise ValidationError(
+                ['H value should be in 0-179 range'], cls
+            )
+
+        if 0 >= value[1] >= 255 or 0 >= value[2] >= 255:
+            raise ValidationError(
+                ['S and V values should be in 0-255 range'], cls
+            )
+
+        return value
 
 
 class Coordinate(BaseModel):
