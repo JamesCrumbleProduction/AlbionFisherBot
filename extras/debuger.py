@@ -1,13 +1,21 @@
-import os
-import cv2
-import time
-import numpy as np
-
-from mss import mss
-from pydantic import BaseModel
-from screeninfo import get_monitors
-from pynput.mouse import Listener, Controller
+from pynput.mouse import Listener
 from concurrent.futures import Future, ThreadPoolExecutor
+from pynput.mouse import Listener, Controller
+from screeninfo import get_monitors
+from pydantic import BaseModel
+from mss import mss
+import numpy as np
+import time
+import cv2
+import os
+from logging.config import listen
+<< << << < HEAD
+== == == =
+>>>>>> > master
+
+<< << << < HEAD
+== == == =
+>>>>>> > master
 
 
 class ValidatedTemplateData(BaseModel):
@@ -332,6 +340,7 @@ def mouse_scroll_listener():
     for _ in range(50):
         time.sleep(0.25)
     listener.stop()
+
 
     # with  as listener:
     #     listener.join()
