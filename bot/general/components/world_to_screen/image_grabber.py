@@ -4,7 +4,7 @@ from mss import mss
 from numpy import ndarray
 from screeninfo import get_monitors
 
-from .schemas import Region
+from .schemas import Region, Coordinate
 from .exceptions import MonitorDefiningError, WrongScreenResolution
 
 
@@ -17,6 +17,18 @@ def _define_monitor_region() -> Region:
             # raise WrongScreenResolution('Support only 1024x768 screen resolution')  # noqa
 
     raise MonitorDefiningError('Cannot define default monitor region...')
+
+
+def monitor_region() -> Region:
+    return _define_monitor_region()
+
+
+def monitor_center() -> Coordinate:
+    monitor_region = _define_monitor_region()
+    return Coordinate(
+        x=monitor_region.width // 2,
+        y=monitor_region.height // 2
+    )
 
 
 def validate_region(region: Region = None) -> Region:

@@ -1,25 +1,30 @@
 import numpy as np
 
-from dataclasses import dataclass
 from pydantic import BaseSettings
 
-from .world_to_screen import Region
+from .world_to_screen import Region, HSVRegion
 
 
 class HSVConfigs(BaseSettings):
 
-    @dataclass
-    class Bobber:
-        # [Hmin, Smin, Vmin]
-        LOWER_HSV_ARRAY = np.array(
-            [0, 167, 180],  # old [0, 157, 206]
-            dtype=np.uint8, copy=False
+    BOBBER_RANGES: list[HSVRegion] = [
+        HSVRegion(
+            lower_range=np.array(
+                [0, 134, 184], dtype=np.uint8, copy=False
+            ),
+            higher_range=np.array(
+                [179, 141, 239], dtype=np.uint8, copy=False
+            )
+        ),
+        HSVRegion(
+            lower_range=np.array(
+                [0, 35, 0], dtype=np.uint8, copy=False
+            ),
+            higher_range=np.array(
+                [9, 255, 255], dtype=np.uint8, copy=False
+            )
         )
-        # [Hmax, Smax, Vmax]
-        HIGHER_HSV_ARRAY = np.array(
-            [179, 219, 255],  # old [3, 224, 255]
-            dtype=np.uint8, copy=False
-        )
+    ]
 
 
 class Regions(BaseSettings):

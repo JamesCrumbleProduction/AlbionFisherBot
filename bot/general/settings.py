@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         # 0.7, 0.75,
         1, 1.05, 1.07, 1.073, 1.1
     ]
+    BOBBER_CORNER_EXPAND_PERCENTAGE: int = 5
     CANCEL_ANY_ACTION_BUTTON: str = 's'
     NEW_FISH_CATCHING_AWAITING: float = 1.8
     CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)

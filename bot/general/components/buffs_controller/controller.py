@@ -10,7 +10,7 @@ from .schemas import BuffInfo
 from ..settings import settings
 from ..templates import CompiledTemplate, to_cvt_color
 from ..io_controllers import CommonIOController, ScrollDirection
-from ..world_to_screen import TemplateScanner, Coordinate, grab_screen
+from ..world_to_screen import TemplateScanner, Coordinate, grab_screen, monitor_center
 
 BUFF_COOLDOWN: float = 1.0
 ITEM_USED_TO_UTILITY_BAR_COOLDOWN: float = 10.0
@@ -42,15 +42,15 @@ class BuffsController:
         return grab_screen(settings.REGIONS.INVENTORY)
 
     def _iterate_through_inventory(self) -> Iterator[np.ndarray]:
+        CommonIOController.move(monitor_center())
+
+        time.sleep(0.1)  # sync img buffer
+        past_inventory_image = self._grab_inventory_region_img()
+        yield past_inventory_image
         CommonIOController.move(Coordinate(
             x=settings.REGIONS.INVENTORY.left + random.randint(3, 10),
             y=settings.REGIONS.INVENTORY.top + random.randint(3, 10)
         ))
-
-        past_inventory_image = self._grab_inventory_region_img()
-        yield past_inventory_image
-        CommonIOController.scroll(1, ScrollDirection.DOWN)
-        time.sleep(1.5)
 
         while True:
 

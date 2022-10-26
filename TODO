@@ -1,3 +1,3 @@
-1. FIX 0 offset bobber (reset bobber check when offset is 0)
-2. FEAT add additional hsv regions for bobber checking (it might be non full red color (night color etc.)) (so little pixels count)
-3. FEAT selectable region
+1. FIX 0 offset bobber (reset bobber check when offset is 0) DONE
+2. FEAT add additional hsv regions for bobber checking (it might be non full red color (night color etc.)) (so little pixels count) DONE
+3. FEAT selectable region DONE
