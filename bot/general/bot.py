@@ -109,7 +109,7 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=bait_buff.is_active,
-                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.6, region=componenets_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     bait_buff.empty_slot,
