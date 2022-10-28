@@ -9,6 +9,7 @@ import time
 import cv2
 import os
 
+
 class ValidatedTemplateData(BaseModel):
     location_x: np.ndarray
     location_y: np.ndarray
@@ -234,9 +235,9 @@ def get_bobber_corner(return_: bool = False) -> dict | None:
 
 def check_for_bobbers_templates():
 
-    current_path = os.getcwd()
+    current_path = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(
-        current_path, 'bot', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'bobbers'
+        current_path, '..', 'bot', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'bobbers'
     )
     executor = ThreadPoolExecutor(max_workers=6)
 
@@ -331,7 +332,6 @@ def mouse_scroll_listener():
     for _ in range(50):
         time.sleep(0.25)
     listener.stop()
-
 
     # with  as listener:
     #     listener.join()

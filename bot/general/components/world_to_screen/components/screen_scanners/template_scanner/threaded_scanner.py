@@ -24,25 +24,24 @@ class ThreadedTemplateScanner(TemplateScanner):
                 futures.append(future)
 
             for j, future in enumerate(futures):
-                # print(i, future.done())
                 if future.done():
                     if template_data := future.result():
                         yield Coordinate(
                             x=(
                                 template_data.location_x[0]
-                                + template_data.width//2
-                                + self.region.left
+                                + template_data.width // 2
+                                + self._image.region.left
                             ),
                             y=(
                                 template_data.location_y[0]
-                                + template_data.height//2
-                                + self.region.top
+                                + template_data.height // 2
+                                + self._image.region.top
                             ),
                             region=Region(
                                 width=template_data.width,
                                 height=template_data.height,
-                                left=template_data.location_x[0],
-                                top=template_data.location_y[0]
+                                left=self._image.region.left + template_data.location_x[0],  # noqa
+                                top=self._image.region.top + template_data.location_y[0]  # noqa
                             )
                         )
                     else:
