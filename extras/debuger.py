@@ -8,15 +8,6 @@ import numpy as np
 import time
 import cv2
 import os
-from logging.config import listen
-<< << << < HEAD
-== == == =
->>>>>> > master
-
-<< << << < HEAD
-== == == =
->>>>>> > master
-
 
 class ValidatedTemplateData(BaseModel):
     location_x: np.ndarray
