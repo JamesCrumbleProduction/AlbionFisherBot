@@ -1,3 +1,4 @@
+import cv2
 import time
 import random
 
@@ -395,18 +396,18 @@ class FisherBot(InfoInterface):
             if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
 
                 bobber_pos = bobber_coord.x - bobber_coord.region.width // 2
-                need_to_pool = bobber_pos <= self._catching_bar_mouse_hold_threshold
+                need_to_release = bobber_pos >= self._catching_bar_mouse_hold_threshold
 
                 FISHER_BOT_LOGGER.debug(
-                    f'NEED TO POOL BOBBER => {need_to_pool}\n\t'
+                    f'NEED TO RELEASE BUTTON => {need_to_release}\n\t'
                     f'BOBBER POSITION: {bobber_pos} <= CATCHING MOUSE THRESHOLD: {self._catching_bar_mouse_hold_threshold}'
                 )
 
-                if need_to_pool:
+                if need_to_release:
+                    CommonIOController.release_mouse_left_button()
+                    time.sleep(0.09)
                     CommonIOController.press_mouse_left_button()
                 else:
-                    CommonIOController.release_mouse_left_button()
-                    time.sleep(0.3)
                     CommonIOController.press_mouse_left_button()
             else:
                 FISHER_BOT_LOGGER.info('CATCHED')
