@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from ...helpers import source_auto_update
-from ....schemas import Region, HSVRegion
+from ....schemas import Image, Region, HSVRegion
 from ....image_grabber import grab_screen, validate_region
 
 
@@ -24,7 +24,7 @@ class HSVBobberScanner:
         region: Region = None,
     ) -> None:
         self.region = validate_region(region)
-        self._image: np.ndarray = None
+        self._image: Image = None
         self._hsv_ranges = hsv_ranges
         self._source_kwargs = dict()
 
@@ -37,25 +37,33 @@ class HSVBobberScanner:
 
     @source_auto_update
     def count_nonzero_mask(self) -> int:
-        pixel_counts: list[int] = list()
+        max_pixels_count: int = 0
 
         for hsv_range in self._hsv_ranges:
             hsv_mask = cv2.inRange(
-                cv2.cvtColor(self._image, cv2.COLOR_BGR2HSV),
+                cv2.cvtColor(self._image.data, cv2.COLOR_BGR2HSV),
                 hsv_range.lower_range,
                 hsv_range.higher_range
             )
             bitwise: np.ndarray = cv2.bitwise_and(
-                self._image, self._image, mask=hsv_mask
+                self._image.data, self._image.data, mask=hsv_mask
             )
             pixels_count = np.count_nonzero(bitwise)
-            pixel_counts.append(pixels_count)
-
-        return max(pixel_counts)
+            if max_pixels_count < pixels_count:
+                max_pixels_count = pixels_count
+        return max_pixels_count
 
     def update_source(self, **kwargs) -> None:
-        self._image = grab_screen(
-            self.region
-            if kwargs.get('as_custom_region') is None
+        image_region = (
+            self.region if kwargs.get('as_custom_region') is None
             else kwargs.get('as_custom_region')
+        )
+        image_data = (
+            grab_screen(image_region)
+            if kwargs.get('as_custom_image') is None
+            else kwargs.get('as_custom_image')
+        )
+        self._image = Image(
+            data=image_data,
+            region=image_region
         )

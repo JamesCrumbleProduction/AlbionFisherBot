@@ -1,6 +1,6 @@
 import numpy as np
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError
 
 
 class ValidatedTemplateData(BaseModel):
@@ -55,3 +55,12 @@ class Coordinate(BaseModel):
 
     def tuple_format(self) -> tuple[int, int]:
         return self.x, self.y
+
+
+class Image(BaseModel):
+
+    data: np.ndarray
+    region: Region
+
+    class Config:
+        arbitrary_types_allowed = 'allow'

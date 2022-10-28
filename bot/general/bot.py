@@ -1,3 +1,4 @@
+import cv2
 import time
 import random
 
@@ -109,7 +110,7 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=bait_buff.is_active,
-                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.6, region=componenets_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     bait_buff.empty_slot,
@@ -263,7 +264,6 @@ class FisherBot(InfoInterface):
             for coordinate in self._bobber_scanner(
                 as_custom_region=self._get_bobber_corner()
             ).iterate_all_by_first_founded():
-                print(coordinate)
                 if coordinate:
                     return coordinate.region
 
@@ -296,12 +296,10 @@ class FisherBot(InfoInterface):
             ))
         else:
             x_new = random.randint(
-                self._custom_catching_region.left,
-                self._custom_catching_region.width
+                self._custom_catching_region.left, self._custom_catching_region.width
             )
             y_new = random.randint(
-                self._custom_catching_region.top,
-                self._custom_catching_region.height
+                self._custom_catching_region.top, self._custom_catching_region.height
             )
 
         CommonIOController.move(Coordinate(x=x_new, y=y_new))
@@ -398,17 +396,19 @@ class FisherBot(InfoInterface):
             if bobber_coord := self._catching_bobber_scanner.indentify_by_first():
 
                 bobber_pos = bobber_coord.x - bobber_coord.region.width // 2
-                need_to_pool = bobber_pos <= self._catching_bar_mouse_hold_threshold
+                need_to_release = bobber_pos >= self._catching_bar_mouse_hold_threshold
 
                 FISHER_BOT_LOGGER.debug(
-                    f'NEED TO POOL BOBBER => {need_to_pool}\n\t'
+                    f'NEED TO RELEASE BUTTON => {need_to_release}\n\t'
                     f'BOBBER POSITION: {bobber_pos} <= CATCHING MOUSE THRESHOLD: {self._catching_bar_mouse_hold_threshold}'
                 )
 
-                if need_to_pool:
+                if need_to_release:
+                    CommonIOController.release_mouse_left_button()
+                    time.sleep(0.09)
                     CommonIOController.press_mouse_left_button()
                 else:
-                    CommonIOController.release_mouse_left_button()
+                    CommonIOController.press_mouse_left_button()
             else:
                 FISHER_BOT_LOGGER.info('CATCHED')
                 CommonIOController.release_mouse_left_button()

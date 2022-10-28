@@ -1,6 +1,4 @@
 from __future__ import annotations
-from asyncio import Future
-
 
 import cv2
 import numpy as np
@@ -11,12 +9,12 @@ from typing import Iterator, Iterable
 from ...helpers import source_auto_update
 from ....image_grabber import grab_screen, validate_region
 from ....schemas import (
+    Image,
     Region,
     Coordinate,
     ValidatedTemplateData
 )
 from .....templates import CompiledTemplate
-from ......services.executor import SCANNER_EXECUTOR
 
 
 class TemplateScanner:
@@ -26,7 +24,7 @@ class TemplateScanner:
         'templates',
         'threshold',
 
-        '_image_rgb',
+        '_image',
         '_source_kwargs',
     )
 
@@ -43,7 +41,7 @@ class TemplateScanner:
         self.threshold = threshold
         self.templates = [*compiled_templates, *iterable_templates]
 
-        self._image_rgb: ndarray = None
+        self._image: Image = None
         self._source_kwargs = dict()
 
     def __call__(self, /, as_custom_region: Region = None, as_custom_image: np.ndarray = None) -> TemplateScanner:
@@ -61,7 +59,7 @@ class TemplateScanner:
             yield coordinate
 
     @source_auto_update
-    def iterate_all_by_first_founded(self, with_executor: bool = False) -> Iterator[Coordinate | None]:
+    def iterate_all_by_first_founded(self) -> Iterator[Coordinate | None]:
         for template in self.templates:
             if template_data := self._validate_template(template):
                 yield Coordinate(
@@ -76,8 +74,8 @@ class TemplateScanner:
                         + self.region.top
                     ),
                     region=Region(
-                        width=template_data.width,
-                        height=template_data.height,
+                        width=template_data.width + self.region.width,
+                        height=template_data.height + self.region.height,
                         left=template_data.location_x[0],
                         top=template_data.location_y[0]
                     )
@@ -100,19 +98,19 @@ class TemplateScanner:
             return Coordinate(
                 x=(
                     template_data.location_x[0]
-                    + template_data.width//2
-                    + self.region.left
+                    + template_data.width // 2
+                    + self._image.region.left
                 ),
                 y=(
                     template_data.location_y[0]
-                    + template_data.height//2
-                    + self.region.top
+                    + template_data.height // 2
+                    + self._image.region.top
                 ),
                 region=Region(
                     width=template_data.width,
                     height=template_data.height,
-                    left=template_data.location_x[0],
-                    top=template_data.location_y[0]
+                    left=self._image.region.left + template_data.location_x[0],
+                    top=self._image.region.top + template_data.location_y[0]
                 )
             )
 
@@ -125,13 +123,21 @@ class TemplateScanner:
         return False
 
     def update_source(self, **kwargs) -> None:
-        self._image_rgb = cv2.cvtColor(
-            grab_screen(
-                self.region
-                if kwargs.get('as_custom_region') is None
-                else kwargs.get('as_custom_region')
-            ) if kwargs.get('as_custom_image') is None else kwargs.get('as_custom_image'),
+        image_region = (
+            self.region if kwargs.get('as_custom_region') is None
+            else kwargs.get('as_custom_region')
+        )
+        image_data = cv2.cvtColor(
+            (
+                grab_screen(image_region)
+                if kwargs.get('as_custom_image') is None
+                else kwargs.get('as_custom_image')
+            ),
             cv2.COLOR_BGR2RGB
+        )
+        self._image = Image(
+            data=image_data,
+            region=image_region
         )
 
     def _validate_template(
@@ -139,7 +145,7 @@ class TemplateScanner:
     ) -> ValidatedTemplateData | None:
         height, width = template.template_data.shape[:-1]
         res = cv2.matchTemplate(
-            self._image_rgb,
+            self._image.data,
             template.template_data,
             cv2.TM_CCOEFF_NORMED
         )
