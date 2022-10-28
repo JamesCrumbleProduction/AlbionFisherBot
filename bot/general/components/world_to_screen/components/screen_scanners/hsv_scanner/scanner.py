@@ -49,11 +49,11 @@ class HSVBobberScanner:
                 self._image, self._image, mask=hsv_mask
             )
             pixels_count = np.count_nonzero(bitwise)
-            
+
             if max_pixels_count < pixels_count:
                 max_pixels_count = pixels_count
 
-        return pixels_count
+        return max_pixels_count
 
     def update_source(self, **kwargs) -> None:
         self._image = grab_screen(
