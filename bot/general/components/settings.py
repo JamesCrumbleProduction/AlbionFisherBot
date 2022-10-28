@@ -10,10 +10,10 @@ class HSVConfigs(BaseSettings):
     BOBBER_RANGES: list[HSVRegion] = [
         HSVRegion(
             lower_range=np.array(
-                [0, 134, 184], dtype=np.uint8, copy=False
+                [0, 157, 151], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
-                [179, 141, 239], dtype=np.uint8, copy=False
+                [3, 224, 255], dtype=np.uint8, copy=False
             )
         ),
         HSVRegion(
@@ -22,6 +22,14 @@ class HSVConfigs(BaseSettings):
             ),
             higher_range=np.array(
                 [9, 255, 255], dtype=np.uint8, copy=False
+            )
+        ),
+        HSVRegion(
+            lower_range=np.array(
+                [119, 120, 100], dtype=np.uint8, copy=False
+            ),
+            higher_range=np.array(
+                [179, 180, 255], dtype=np.uint8, copy=False
             )
         )
     ]

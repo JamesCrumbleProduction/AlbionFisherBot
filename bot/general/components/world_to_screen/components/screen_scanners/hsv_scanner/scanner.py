@@ -37,7 +37,7 @@ class HSVBobberScanner:
 
     @source_auto_update
     def count_nonzero_mask(self) -> int:
-        pixel_counts: list[int] = list()
+        max_pixels_count: int = 0
 
         for hsv_range in self._hsv_ranges:
             hsv_mask = cv2.inRange(
@@ -49,9 +49,11 @@ class HSVBobberScanner:
                 self._image, self._image, mask=hsv_mask
             )
             pixels_count = np.count_nonzero(bitwise)
-            pixel_counts.append(pixels_count)
+            
+            if max_pixels_count < pixels_count:
+                max_pixels_count = pixels_count
 
-        return max(pixel_counts)
+        return pixels_count
 
     def update_source(self, **kwargs) -> None:
         self._image = grab_screen(

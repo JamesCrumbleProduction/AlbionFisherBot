@@ -263,7 +263,6 @@ class FisherBot(InfoInterface):
             for coordinate in self._bobber_scanner(
                 as_custom_region=self._get_bobber_corner()
             ).iterate_all_by_first_founded():
-                print(coordinate)
                 if coordinate:
                     return coordinate.region
 
@@ -296,12 +295,10 @@ class FisherBot(InfoInterface):
             ))
         else:
             x_new = random.randint(
-                self._custom_catching_region.left,
-                self._custom_catching_region.width
+                self._custom_catching_region.left, self._custom_catching_region.width
             )
             y_new = random.randint(
-                self._custom_catching_region.top,
-                self._custom_catching_region.height
+                self._custom_catching_region.top, self._custom_catching_region.height
             )
 
         CommonIOController.move(Coordinate(x=x_new, y=y_new))
@@ -409,6 +406,8 @@ class FisherBot(InfoInterface):
                     CommonIOController.press_mouse_left_button()
                 else:
                     CommonIOController.release_mouse_left_button()
+                    time.sleep(0.3)
+                    CommonIOController.press_mouse_left_button()
             else:
                 FISHER_BOT_LOGGER.info('CATCHED')
                 CommonIOController.release_mouse_left_button()
