@@ -50,7 +50,8 @@ class EventsLoop:
                 mouse_listener.start()
 
             elif self._bot_instance.status is Status.CATCHING:
-                mouse_listener.stop()
+                if mouse_listener is not None:
+                    mouse_listener.stop()
                 break
 
             time.sleep(0.5)
