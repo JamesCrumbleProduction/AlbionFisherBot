@@ -19,7 +19,7 @@ if (
     open(LOGGING_FILE_PATH, 'w').close()  # erase file content
 
 logging.basicConfig(
-    format='%(asctime)s, %(msecs)d %(name)s %(levelname)s: %(message)s',
+    format='%(asctime)s, %(name)s %(levelname)s: %(message)s',
     datefmt='%H:%M:%S',
     level=settings.LOGGING_LEVEL,
     handlers=[
