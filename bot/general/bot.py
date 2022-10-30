@@ -14,10 +14,11 @@ from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsContro
 from .components.world_to_screen import (
     Region,
     Coordinate,
+    ScreenPart,
     monitor_center,
-    monitor_region,
     TemplateScanner,
     HSVBobberScanner,
+    get_screen_part_region,
     ThreadedTemplateScanner,
 )
 
@@ -154,92 +155,20 @@ class FisherBot(InfoInterface):
         )
 
     def _get_bobber_corner(self) -> Region:
-
         monitor_center_ = monitor_center()
-        monitor_region_ = monitor_region()
         mouse_position = CommonIOController.mouse_position()
 
         if mouse_position.y < monitor_center_.y:
             if mouse_position.x < monitor_center_.x:
-                region = Region(
-                    top=0,
-                    left=0,
-                    width=int(
-                        monitor_center_.x + monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    height=int(
-                        monitor_center_.y + monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    )
-                )
+                return get_screen_part_region(ScreenPart.TOP_LEFT)
             else:
-                region = Region(
-                    top=0,
-                    left=int(
-                        monitor_center_.x - monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    width=int(
-                        monitor_center_.x + monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    height=int(
-                        monitor_center_.y + monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    )
-                )
+                return get_screen_part_region(ScreenPart.TOP_RIGHT)
 
         else:
             if mouse_position.x < monitor_center_.x:
-                region = Region(
-                    top=int(
-                        monitor_center_.y - monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    left=0,
-                    width=int(
-                        monitor_center_.x + monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    height=int(
-                        monitor_center_.y + monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    )
-                )
+                return get_screen_part_region(ScreenPart.BOTTOM_LEFT)
             else:
-                region = Region(
-                    top=int(
-                        monitor_center_.y - monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    left=int(
-                        monitor_center_.x - monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    width=int(
-                        monitor_center_.x + monitor_region_.width * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    ),
-                    height=int(
-                        monitor_center_.y + monitor_region_.height * (
-                            settings.BOBBER_CORNER_EXPAND_PERCENTAGE / 100
-                        )
-                    )
-                )
-
-        return region
+                return get_screen_part_region(ScreenPart.BOTTOM_RIGHT)
 
     def _cancel_any_action(self) -> None:
         CommonIOController.press(settings.CANCEL_ANY_ACTION_BUTTON)
@@ -253,7 +182,7 @@ class FisherBot(InfoInterface):
         elif not fish_is_catched:
             return 60.0 * random.randint(2, 5)
 
-        return 0.0
+        return settings.NEW_FISH_CATCHING_AWAITING
 
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
         bobber_pixels: int = self._hsv_bobber_scanner(

@@ -1,6 +1,15 @@
 import numpy as np
 
+from enum import Enum
 from pydantic import BaseModel, ValidationError
+
+
+class ScreenPart(Enum):
+
+    TOP_LEFT: str = 'TOP_LEFT'
+    TOP_RIGHT: str = 'TOP_RIGHT'
+    BOTTOM_LEFT: str = 'BOTTOM_LEFT'
+    BOTTOM_RIGHT: str = 'BOTTOM_RIGHT'
 
 
 class ValidatedTemplateData(BaseModel):
