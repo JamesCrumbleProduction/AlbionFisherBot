@@ -245,7 +245,7 @@ class FisherBot(InfoInterface):
         CommonIOController.press(settings.CANCEL_ANY_ACTION_BUTTON)
 
     def _define_sleep_value(self, fish_is_catched: bool) -> float:
-        if not fish_is_catched and self._skiped_fishes_in_row == 2:
+        if not fish_is_catched and self._skipped_fishes_in_row == 2:
             self._skipped_fishes_in_row = 0
             return 60.0 * 10
         elif fish_is_catched:
