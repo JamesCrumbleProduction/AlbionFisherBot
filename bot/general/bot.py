@@ -185,12 +185,21 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _calc_bobber_offset(self, bobber_region: Region) -> int:
-        bobber_pixels: int = self._hsv_bobber_scanner(
-            as_custom_region=bobber_region
-        ).count_nonzero_mask()
-        bobber_offset = int(
-            bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
-        )
+
+        max_bobber_offset: int = 0
+        sleep_per_cycle: float = 1 / settings.CALCULATION_CYCLES
+
+        for _ in range(settings.CALCULATION_CYCLES):
+            bobber_pixels: int = self._hsv_bobber_scanner(
+                as_custom_region=bobber_region
+            ).count_nonzero_mask()
+            bobber_offset = int(
+                bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
+            )
+            if max_bobber_offset < bobber_offset:
+                max_bobber_offset = bobber_offset
+
+            time.sleep(sleep_per_cycle)
 
         FISHER_BOT_LOGGER.debug(
             f'CALC BOBBER OFFSET: PIXELS = "{bobber_pixels}", OFFSET = "{bobber_offset}"'
