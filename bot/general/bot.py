@@ -180,15 +180,12 @@ class FisherBot(InfoInterface):
     def _calc_bobber_offset(self, bobber_region: Region, in_cycle: bool = True) -> int:
 
         max_bobber_offset: int = 0
-        sleep_per_cycle: float = (1 / settings.CALCULATION_CYCLES) if in_cycle else 0
+        sleep_per_cycle: float = (1 / settings.BOBBER_OFFSET_CALCULATION_CYCLES) if in_cycle else 0
 
-        for _ in range(settings.CALCULATION_CYCLES if in_cycle else 1):
-            bobber_pixels: int = self._hsv_bobber_scanner(
-                as_custom_region=bobber_region
-            ).count_nonzero_mask()
-            bobber_offset = int(
-                bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD)
-            )
+        for _ in range(settings.BOBBER_OFFSET_CALCULATION_CYCLES if in_cycle else 1):
+            bobber_pixels: int = self._hsv_bobber_scanner(as_custom_region=bobber_region).count_nonzero_mask()
+            bobber_offset = int(bobber_pixels / 100 * (100 - settings.BOBBER_CATCH_THRESHOLD))
+
             if max_bobber_offset < bobber_offset:
                 max_bobber_offset = bobber_offset
 
@@ -198,25 +195,29 @@ class FisherBot(InfoInterface):
         return max_bobber_offset
 
     def _need_to_catch(self, bobber_region: Region, bobber_offset: int) -> bool:
-        bobber_pixels: int = self._hsv_bobber_scanner(
-            as_custom_region=bobber_region
-        ).count_nonzero_mask()
-
+        bobber_pixels: int = self._hsv_bobber_scanner(as_custom_region=bobber_region).count_nonzero_mask()
         condition: bool = bobber_pixels < bobber_offset
 
         FISHER_BOT_LOGGER.debug(
             f'NEED TO CATCH => {condition}\n\tPIXELS = "{bobber_pixels}" < OFFSET = "{bobber_offset}"'
         )
-
         return condition
 
-    def _find_bobber_region(self) -> Region:
+    def _find_bobber_region_with_timeout(self, timeout: float | None = None) -> Region | None:
+        st: float = time.time()
+
         while True:
             for coordinate in self._bobber_scanner(
                 as_custom_region=self._get_bobber_corner()
             ).iterate_all_by_first_founded():
                 if coordinate:
                     return coordinate.region
+
+            if timeout is not None and time.time() - st > timeout:
+                return
+
+    def _find_bobber_region(self) -> Region:
+        return self._find_bobber_region_with_timeout()  # type: ignore
 
     def _catch_when_fish_awaiting(self) -> None:
         CommonIOController.press_mouse_button_and_release(
@@ -228,12 +229,35 @@ class FisherBot(InfoInterface):
 
         bobber_region = self._find_bobber_region()
         bobber_offset = self._calc_bobber_offset(bobber_region)
+        last_offset_calc_time: float = time.time()
 
         while True:
-            condition = self._need_to_catch(bobber_region, bobber_offset)
-            if condition:
+            if self._need_to_catch(bobber_region, bobber_offset):
                 CommonIOController.mouse_left_click()
                 break
+
+            if bobber_offset == 0:
+                if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                    self._catching_errors += 1
+                    FISHER_BOT_LOGGER.warning(
+                        f'BOBBER OFFSET EQUALS 0 FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
+                    )
+                    break
+
+                if new_bobber_region := self._find_bobber_region_with_timeout(timeout=5):
+                    bobber_offset = self._calc_bobber_offset(new_bobber_region)
+                else:
+                    self._catching_errors += 1
+                    FISHER_BOT_LOGGER.warning(
+                        'BOBBER OFFSET EQUALS 0 AND BOBBER REGION CANNOT BE DEFINED '
+                        f'FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
+                    )
+                    break
+
+            if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                last_offset_calc_time = time.time()
+                bobber_offset = self._calc_bobber_offset(bobber_region, in_cycle=False)
+                FISHER_BOT_LOGGER.info(f'NEW BOBBER OFFSET => "{bobber_offset}"')
 
             time.sleep(0.1)
 
@@ -330,6 +354,7 @@ class FisherBot(InfoInterface):
 
                 self._cancel_any_action()
                 self._skipped_non_fishes += 1
+                self._skipped_fishes_in_row += 1
 
                 return False
 
@@ -410,8 +435,6 @@ class FisherBot(InfoInterface):
             if need_to_catch_fish:
                 self._skipped_fishes_in_row = 0
                 fish_is_catched = self._catch_fish()
-            else:
-                self._skipped_fishes_in_row += 1
 
             sleep_time = self._define_sleep_value(fish_is_catched)
 

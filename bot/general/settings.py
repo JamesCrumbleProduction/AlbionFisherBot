@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     NEW_FISH_CATCHING_AWAITING: float = 1.8
     CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
     BOBBER_CATCH_THRESHOLD: int = 30  # in percentage
-    CALCULATION_CYCLES: int = 10
+    BOBBER_OFFSET_CALCULATION_CYCLES: int = 10
+    RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds
 
     SERVER_PORT: int = 4000
     SERVER_HOST: str = '0.0.0.0'
