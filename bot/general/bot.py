@@ -47,7 +47,7 @@ class FisherBot(InfoInterface):
         self._skipped_fishes_in_row: int = 0
 
         self.is_running: bool = True
-        self._events_loop = EventsLoop(self)
+        self._events_loop: EventsLoop = EventsLoop(self)
 
         self._custom_catching_region: Region | None = None
 
@@ -247,10 +247,10 @@ class FisherBot(InfoInterface):
             ))
         else:
             x_new = random.randint(
-                *sorted([self._custom_catching_region.left, self._custom_catching_region.width])  # noqa
+                *sorted([self._custom_catching_region.left, self._custom_catching_region.width])
             )
             y_new = random.randint(
-                *sorted([self._custom_catching_region.top, self._custom_catching_region.height])  # noqa
+                *sorted([self._custom_catching_region.top, self._custom_catching_region.height])
             )
 
         CommonIOController.move(Coordinate(x=x_new, y=y_new))

@@ -40,8 +40,8 @@ class ThreadedTemplateScanner(TemplateScanner):
                             region=Region(
                                 width=template_data.width,
                                 height=template_data.height,
-                                left=self._image.region.left + template_data.location_x[0],  # noqa
-                                top=self._image.region.top + template_data.location_y[0]  # noqa
+                                left=self._image.region.left + template_data.location_x[0],
+                                top=self._image.region.top + template_data.location_y[0]
                             )
                         )
                     else:

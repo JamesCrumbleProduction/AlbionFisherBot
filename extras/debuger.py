@@ -196,33 +196,33 @@ def get_bobber_corner(return_: bool = False) -> dict | None:
                 region = dict(
                     top=0,
                     left=0,
-                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''LEFT TOP CORNER{region}''')
             else:
                 region = dict(
                     top=0,
-                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''RIGHT TOP CORNER{region}''')
         else:
             if mouse_x < center_x:
                 region = dict(
-                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),
                     left=0,
-                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''LEFT BOTTOM CORNER {region}''')
             else:
                 region = dict(
-                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
-                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''RIGHT BOTTOM CORNER{region}''')
         if return_:

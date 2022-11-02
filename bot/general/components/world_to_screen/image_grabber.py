@@ -16,7 +16,7 @@ def _define_monitor_region() -> Region:
             if monitor.width == 1024 and monitor.height == 768:
                 return Region(left=0, top=0, width=monitor.width, height=monitor.height)
 
-            raise WrongScreenResolution('Support only 1024x768 screen resolution')  # noqa
+            raise WrongScreenResolution('Support only 1024x768 screen resolution')
 
     raise MonitorDefiningError('Cannot define default monitor region...')
 
@@ -38,29 +38,29 @@ def get_screen_part_region(screen_part: ScreenPart) -> Region:
             return Region(
                 top=0,
                 left=0,
-                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))  # noqa
+                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))
             )
         case ScreenPart.TOP_RIGHT:
             return Region(
                 top=0,
-                left=int(monitor_center_.x - monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))  # noqa
+                left=int(monitor_center_.x - monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))
             )
         case ScreenPart.BOTTOM_LEFT:
             return Region(
-                top=int(monitor_center_.y - monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
+                top=int(monitor_center_.y - monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
                 left=0,
-                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))  # noqa
+                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))
             )
         case ScreenPart.BOTTOM_RIGHT:
             return Region(
-                top=int(monitor_center_.y - monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                left=int(monitor_center_.x - monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),  # noqa
-                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))  # noqa
+                top=int(monitor_center_.y - monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                left=int(monitor_center_.x - monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                width=int(monitor_center_.x + monitor_region_.width * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100)),
+                height=int(monitor_center_.y + monitor_region_.height * (BOBBER_CORNER_EXPAND_PERCENTAGE / 100))
             )
 
     raise ValueError(
