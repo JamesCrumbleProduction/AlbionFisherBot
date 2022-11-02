@@ -49,7 +49,7 @@ class FisherBot(InfoInterface):
         self.is_running: bool = True
         self._events_loop = EventsLoop(self)
 
-        self._custom_catching_region: Region = None
+        self._custom_catching_region: Region | None = None
 
         self._init_bobber_scanners()
         self._init_catching_thresholds()
@@ -60,7 +60,7 @@ class FisherBot(InfoInterface):
     def buffs(self) -> Iterator[BuffInfo]:
         yield from self._buffs_controller.buffs
 
-    def set_new_catching_region(self, new_region: Region):
+    def set_new_catching_region(self, new_region: Region) -> None:
         self._custom_catching_region = new_region
         FISHER_BOT_LOGGER.info(
             f'NEW "{self._custom_catching_region}" CATCHING REGION WAS SETTED UP'
@@ -84,16 +84,16 @@ class FisherBot(InfoInterface):
             )
         )
         self._catching_bar_mouse_hold_threshold = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.7
+            componenets_settings.REGIONS.CATCHING_BAR.left
+            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.7
         )
         self._is_fish_checking_threshold_left = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.4
+            componenets_settings.REGIONS.CATCHING_BAR.left
+            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.4
         )
         self._is_fish_checking_threshold_right = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left +
-            componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
+            componenets_settings.REGIONS.CATCHING_BAR.left
+            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
         )
 
     def _init_catching_scanners(self) -> None:
@@ -174,22 +174,15 @@ class FisherBot(InfoInterface):
         CommonIOController.press(settings.CANCEL_ANY_ACTION_BUTTON)
 
     def _define_sleep_value(self, fish_is_catched: bool) -> float:
-        if not fish_is_catched and self._skipped_fishes_in_row == 2:
-            self._skipped_fishes_in_row = 0
-            return 60.0 * 10
-        elif fish_is_catched:
-            return 60.0
-        elif not fish_is_catched:
-            return 60.0 * random.randint(2, 5)
-
+        '''Used for testing purposes only'''
         return settings.NEW_FISH_CATCHING_AWAITING
 
-    def _calc_bobber_offset(self, bobber_region: Region) -> int:
+    def _calc_bobber_offset(self, bobber_region: Region, in_cycle: bool = True) -> int:
 
         max_bobber_offset: int = 0
-        sleep_per_cycle: float = 1 / settings.CALCULATION_CYCLES
+        sleep_per_cycle: float = (1 / settings.CALCULATION_CYCLES) if in_cycle else 0
 
-        for _ in range(settings.CALCULATION_CYCLES):
+        for _ in range(settings.CALCULATION_CYCLES if in_cycle else 1):
             bobber_pixels: int = self._hsv_bobber_scanner(
                 as_custom_region=bobber_region
             ).count_nonzero_mask()
@@ -201,11 +194,8 @@ class FisherBot(InfoInterface):
 
             time.sleep(sleep_per_cycle)
 
-        FISHER_BOT_LOGGER.debug(
-            f'CALC BOBBER OFFSET: PIXELS = "{bobber_pixels}", OFFSET = "{bobber_offset}"'
-        )
-
-        return bobber_offset
+        FISHER_BOT_LOGGER.debug(f'DEFINED BOBBER OFFSET = "{max_bobber_offset}"')
+        return max_bobber_offset
 
     def _need_to_catch(self, bobber_region: Region, bobber_offset: int) -> bool:
         bobber_pixels: int = self._hsv_bobber_scanner(
@@ -353,7 +343,7 @@ class FisherBot(InfoInterface):
     def _catch_fish(self) -> bool:
 
         FISHER_BOT_LOGGER.info('CATCHING FISH')
-        last_fish_distance_position: int = None
+        last_fish_distance_position: int = 0
         fish_is_catched: bool = False
 
         while True:
@@ -381,7 +371,8 @@ class FisherBot(InfoInterface):
             else:
 
                 FISHER_BOT_LOGGER.debug(
-                    f'LAST FISH DISTANCE: {last_fish_distance_position} >= FISH DISTANCE THRESHOLD: {self._fish_distance_catched_threshold}'
+                    f'LAST FISH DISTANCE: {last_fish_distance_position} '
+                    f'>= FISH DISTANCE THRESHOLD: {self._fish_distance_catched_threshold}'
                 )
 
                 if (

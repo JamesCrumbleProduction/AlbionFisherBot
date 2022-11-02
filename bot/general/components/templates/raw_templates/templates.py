@@ -33,19 +33,19 @@ def buff_templates_iterator(buffs_folder: str) -> Iterator[BuffRawTemplates]:
             )
             continue
 
-        buff_item_template_path = os.path.join(buff_folder_path, 'item.png')  # noqa
+        buff_item_template_path = os.path.join(buff_folder_path, 'item.png')
         if not os.path.exists(buff_item_template_path):
             raise BuffTemplatesError(
                 f'"{buff_folder}" buff folder should contain "item.png" file'
             )
 
-        buff_empty_slot_template_path = os.path.join(buff_folder_path, 'empty_slot.png')  # noqa
+        buff_empty_slot_template_path = os.path.join(buff_folder_path, 'empty_slot.png')
         if not os.path.exists(buff_empty_slot_template_path):
             raise BuffTemplatesError(
                 f'"{buff_folder}" buff folder should contain "empty_slot.png" file'
             )
 
-        buff_is_active_folder_path = os.path.join(buff_folder_path, 'is_active')  # noqa
+        buff_is_active_folder_path = os.path.join(buff_folder_path, 'is_active')
         if (
             not os.path.exists(buff_is_active_folder_path)
             or not os.path.isdir(buff_is_active_folder_path)
@@ -79,7 +79,7 @@ class Paths:
         __fisher_bot_templates = os.path.join(ROOT_PATH, 'fisher_bot')
 
         bobbers = os.path.join(__fisher_bot_templates, 'bobbers')
-        status_bar_components = os.path.join(__fisher_bot_templates, 'status_bar_components')  # noqa
+        status_bar_components = os.path.join(__fisher_bot_templates, 'status_bar_components')
         buffs = os.path.join(__fisher_bot_templates, 'buffs')
 
 
@@ -88,6 +88,6 @@ class RawTemplates:
 
     @dataclass
     class FisherBotRawTemplates:
-        bobbers = templates_generator(Paths.FisherBotTemplates.bobbers)  # noqa
-        status_bar_components = templates_generator(Paths.FisherBotTemplates.status_bar_components)  # noqa
+        bobbers = templates_generator(Paths.FisherBotTemplates.bobbers)
+        status_bar_components = templates_generator(Paths.FisherBotTemplates.status_bar_components)
         buffs = buff_templates_iterator(Paths.FisherBotTemplates.buffs)

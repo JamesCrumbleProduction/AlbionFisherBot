@@ -67,7 +67,7 @@ def get_screen_part_region(screen_part: ScreenPart) -> Region:
         f'Unknown value of "screen_part" variable => {screen_part}')
 
 
-def validate_region(region: Region = None) -> Region:
+def validate_region(region: Region | None = None) -> Region:
     if region is None:
         return _define_monitor_region()
 

@@ -8,7 +8,7 @@ from ..structure import CompiledTemplates, BuffsCompiledTemplates
 
 class FisherBotCompiledTemplates:
 
-    _instance: FisherBotCompiledTemplates = None
+    _instance: FisherBotCompiledTemplates | None = None
 
     def __new__(cls: type[FisherBotCompiledTemplates], *args, **kwargs) -> FisherBotCompiledTemplates:
         if cls._instance is None:
@@ -27,8 +27,8 @@ class FisherBotCompiledTemplates:
         self._buffs = BuffsCompiledTemplates([
             BuffCompiledTemplates(
                 name=buff.name,
-                item=[*TemplateCompiler([buff.item]).compile_templates()][0],  # noqa
-                empty_slot=[*TemplateCompiler([buff.empty_slot]).compile_templates()][0],  # noqa
+                item=[*TemplateCompiler([buff.item]).compile_templates()][0],
+                empty_slot=[*TemplateCompiler([buff.empty_slot]).compile_templates()][0],
                 is_active=list(CompiledTemplates(
                     TemplateCompiler(buff.is_active).compile_templates()
                 ).templates)
