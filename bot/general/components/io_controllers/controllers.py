@@ -126,6 +126,7 @@ class CommonIOController:
             MOUSE.release(Button.right)
             CommonIOController.mouse_right_button_is_pressed = False
 
+    @staticmethod
     def scroll(steps: int, direction: ScrollDirection) -> None:
         match direction:
             case ScrollDirection.UP:

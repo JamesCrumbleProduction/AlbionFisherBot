@@ -21,14 +21,15 @@ class HSVBobberScanner:
     def __init__(
         self,
         hsv_ranges: list[HSVRegion],
-        region: Region = None,
+        region: Region | None = None,
     ) -> None:
         self.region = validate_region(region)
-        self._image: Image = None
+
+        self._image: Image
         self._hsv_ranges = hsv_ranges
         self._source_kwargs = dict()
 
-    def __call__(self, /, as_custom_region: Region = None, as_custom_image: np.ndarray = None) -> HSVBobberScanner:
+    def __call__(self, /, as_custom_region: Region | None = None, as_custom_image: np.ndarray | None = None) -> HSVBobberScanner:
         if as_custom_region is not None:
             self._source_kwargs['as_custom_region'] = as_custom_region
         if as_custom_image is not None:
@@ -53,17 +54,9 @@ class HSVBobberScanner:
                 max_pixels_count = pixels_count
         return max_pixels_count
 
-    def update_source(self, **kwargs) -> None:
-        image_region = (
-            self.region if kwargs.get('as_custom_region') is None
-            else kwargs.get('as_custom_region')
-        )
+    def update_source(self, **kwargs: dict[str, Region | np.ndarray]) -> None:
+        image_region = self.region if kwargs.get('as_custom_region') is None else kwargs.get('as_custom_region')  # type: ignore
         image_data = (
-            grab_screen(image_region)
-            if kwargs.get('as_custom_image') is None
-            else kwargs.get('as_custom_image')
+            grab_screen(image_region) if kwargs.get('as_custom_image') is None else kwargs.get('as_custom_image')  # type: ignore
         )
-        self._image = Image(
-            data=image_data,
-            region=image_region
-        )
+        self._image = Image(data=image_data, region=image_region)  # type: ignore

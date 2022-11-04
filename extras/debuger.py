@@ -1,4 +1,3 @@
-from pynput.mouse import Listener
 from concurrent.futures import Future, ThreadPoolExecutor
 from pynput.mouse import Listener, Controller
 from screeninfo import get_monitors
@@ -20,10 +19,12 @@ class ValidatedTemplateData(BaseModel):
         arbitrary_types_allowed = 'allow'
 
 
-def _define_monitor_region() -> dict:
+def _define_monitor_region() -> dict[str, int]:
     for monitor in get_monitors():
         if monitor.is_primary or (monitor.x == 0 and monitor.y == 0):
             return dict(left=0, top=0, width=monitor.width, height=monitor.height)
+
+    return dict()
 
 
 MONITOR = _define_monitor_region()
@@ -195,33 +196,33 @@ def get_bobber_corner(return_: bool = False) -> dict | None:
                 region = dict(
                     top=0,
                     left=0,
-                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''LEFT TOP CORNER{region}''')
             else:
                 region = dict(
                     top=0,
-                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''RIGHT TOP CORNER{region}''')
         else:
             if mouse_x < center_x:
                 region = dict(
-                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),
                     left=0,
-                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    width=center_x + int(monitor_res["width"] * (expand_percentage / 100)),
+                    height=center_y + int(monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''LEFT BOTTOM CORNER {region}''')
             else:
                 region = dict(
-                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),  # noqa
-                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),  # noqa
-                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))  # noqa
+                    top=center_y - int(monitor_res["height"] * (expand_percentage / 100)),
+                    left=center_x - int(monitor_res["width"] * (expand_percentage / 100)),
+                    width=int(center_x + monitor_res["width"] * (expand_percentage / 100)),
+                    height=int(center_y + monitor_res["height"] * (expand_percentage / 100))
                 )
                 # print(f'''RIGHT BOTTOM CORNER{region}''')
         if return_:
@@ -270,7 +271,7 @@ def check_for_bobbers_templates():
     while True:
         with mss() as base:
             image = cv2.cvtColor(
-                np.array(base.grab(get_bobber_corner(return_=True)), dtype=np.uint8),  # noqa
+                np.array(base.grab(get_bobber_corner(return_=True)), dtype=np.uint8),  # type: ignore
                 cv2.COLOR_BGR2RGB
             )
 
@@ -333,8 +334,5 @@ def mouse_scroll_listener():
         time.sleep(0.25)
     listener.stop()
 
-    # with  as listener:
-    #     listener.join()
-    # listener.stop()
-    # print('fewfewfwef')
+
 check_for_bobbers_templates()

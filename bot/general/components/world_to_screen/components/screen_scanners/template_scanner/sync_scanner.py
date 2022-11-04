@@ -3,7 +3,6 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from numpy import ndarray
 from typing import Iterator, Iterable
 
 from ...helpers import source_auto_update
@@ -32,7 +31,7 @@ class TemplateScanner:
         self,
         *compiled_templates: CompiledTemplate,
         iterable_templates: Iterable[CompiledTemplate] = list(),
-        region: Region = None,
+        region: Region | None = None,
         threshold: float = 1
     ):
         assert 0 < threshold <= 1
@@ -41,10 +40,10 @@ class TemplateScanner:
         self.threshold = threshold
         self.templates = [*compiled_templates, *iterable_templates]
 
-        self._image: Image = None
+        self._image: Image
         self._source_kwargs = dict()
 
-    def __call__(self, /, as_custom_region: Region = None, as_custom_image: np.ndarray = None) -> TemplateScanner:
+    def __call__(self, /, as_custom_region: Region | None = None, as_custom_image: np.ndarray | None = None) -> TemplateScanner:
         if as_custom_region is not None:
             self._source_kwargs['as_custom_region'] = as_custom_region
         if as_custom_image is not None:
@@ -53,9 +52,7 @@ class TemplateScanner:
 
     @source_auto_update
     def iterate_one_by_each_founded(self) -> Iterator[Coordinate]:
-        for coordinate in self._rectangles_group_by(
-            self._validate_template(self.templates[0])
-        ):
+        for coordinate in self._rectangles_group_by([self._validate_template(self.templates[0])]):
             yield coordinate
 
     @source_auto_update
@@ -123,22 +120,12 @@ class TemplateScanner:
         return False
 
     def update_source(self, **kwargs) -> None:
-        image_region = (
-            self.region if kwargs.get('as_custom_region') is None
-            else kwargs.get('as_custom_region')
-        )
+        image_region = self.region if kwargs.get('as_custom_region') is None else kwargs.get('as_custom_region')  # type: ignore
         image_data = cv2.cvtColor(
-            (
-                grab_screen(image_region)
-                if kwargs.get('as_custom_image') is None
-                else kwargs.get('as_custom_image')
-            ),
+            grab_screen(image_region) if kwargs.get('as_custom_image') is None else kwargs.get('as_custom_image'),  # type: ignore
             cv2.COLOR_BGR2RGB
         )
-        self._image = Image(
-            data=image_data,
-            region=image_region
-        )
+        self._image = Image(data=image_data, region=image_region)  # type: ignore
 
     def _validate_template(
         self, template: CompiledTemplate
@@ -149,7 +136,7 @@ class TemplateScanner:
             template.template_data,
             cv2.TM_CCOEFF_NORMED
         )
-        location_y, location_x = np.where(res >= self.threshold)
+        location_y, location_x = np.where(res >= self.threshold)  # type: ignore
 
         if location_y.size > 0 and location_x.size > 0:
             return ValidatedTemplateData(

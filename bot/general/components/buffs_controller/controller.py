@@ -67,11 +67,11 @@ class BuffsController:
             CommonIOController.scroll(1, ScrollDirection.DOWN)
             time.sleep(1.5)
 
-    def _set_items_to_utility_bar(self, initing_buffs: list[Buff]) -> tuple[float | None, list[Buff]]:
+    def _set_items_to_utility_bar(self, initing_buffs: list[Buff]) -> tuple[float, list[Buff]]:
         self._open_inventory()
 
         setted_buffs: list[Buff] = list()
-        first_setted_buff_time: float = None
+        first_setted_buff_time: float = 0
 
         def setted_buffs_contains(buff: Buff) -> bool:
             for setted_buff in setted_buffs:
@@ -116,16 +116,10 @@ class BuffsController:
                         need_to_init_buffs.append(buff)
 
         if need_to_init_buffs:
-            first_setted_buff_time, setted_buffs = self._set_items_to_utility_bar(
-                need_to_init_buffs
-            )
+            first_setted_buff_time, setted_buffs = self._set_items_to_utility_bar(need_to_init_buffs)
 
-            if first_setted_buff_time is not None:
-                time.sleep(
-                    max(0, ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (
-                        time.time() - first_setted_buff_time
-                    ))
-                )
+            if setted_buffs:
+                time.sleep(max(0, ITEM_USED_TO_UTILITY_BAR_COOLDOWN - (time.time() - first_setted_buff_time)))
 
             for buff in setted_buffs:
                 self._activate_buff(buff)

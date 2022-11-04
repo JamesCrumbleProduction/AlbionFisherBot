@@ -57,7 +57,7 @@ app.add_middleware(
 
 app.add_api_route(
     '/status',
-    endpoint=lambda: 1,
+    endpoint=lambda: 1,  # type: ignore
     status_code=200,
     response_model=int
 )
