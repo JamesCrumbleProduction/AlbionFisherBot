@@ -9,7 +9,7 @@ from .components.events_loop import EventsLoop
 from .components.info_interface import InfoInterface
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
-from .components.settings import settings as componenets_settings
+from .components.settings import settings as components_settings
 from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import (
     Region,
@@ -69,7 +69,7 @@ class FisherBot(InfoInterface):
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
         self._hsv_bobber_scanner = HSVBobberScanner(
-            componenets_settings.HSV_CONFIGS.BOBBER_RANGES
+            components_settings.HSV_CONFIGS.BOBBER_RANGES
         )
         self._bobber_scanner = ThreadedTemplateScanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
@@ -79,21 +79,21 @@ class FisherBot(InfoInterface):
     def _init_catching_thresholds(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING CATCHING THRESHOLDS')
         self._fish_distance_catched_threshold = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left + (
-                componenets_settings.REGIONS.CATCHING_BAR.width * 0.8
+            components_settings.REGIONS.CATCHING_BAR.left + (
+                components_settings.REGIONS.CATCHING_BAR.width * 0.8
             )
         )
         self._catching_bar_mouse_hold_threshold = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.7
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.7
         )
         self._is_fish_checking_threshold_left = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.4
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.4
         )
         self._is_fish_checking_threshold_right = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.6
         )
 
     def _init_catching_scanners(self) -> None:
@@ -101,12 +101,12 @@ class FisherBot(InfoInterface):
         self._fish_catching_distance_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'fish_catched_distance'
-            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=components_settings.REGIONS.CATCHING_BAR
         )
         self._catching_bobber_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'bobber_status_bar'
-            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=components_settings.REGIONS.CATCHING_BAR
         )
 
     def _init_buffs_controller(self) -> None:
@@ -123,15 +123,15 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=bait_buff.is_active,
-                    threshold=0.6, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.6, region=components_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     bait_buff.empty_slot,
-                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                    threshold=0.7, region=components_settings.REGIONS.BUFFS_UTILITY_BAR
                 ),
                 in_inventory_item_scanner=TemplateScanner(
                     bait_buff.item,
-                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                    threshold=0.7, region=components_settings.REGIONS.INVENTORY
                 )
             ),
             Buff(
@@ -141,15 +141,15 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=eat_buff.is_active,
-                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.7, region=components_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     eat_buff.empty_slot,
-                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                    threshold=0.7, region=components_settings.REGIONS.BUFFS_UTILITY_BAR
                 ),
                 in_inventory_item_scanner=TemplateScanner(
                     eat_buff.item,
-                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                    threshold=0.7, region=components_settings.REGIONS.INVENTORY
                 )
             )
         )
