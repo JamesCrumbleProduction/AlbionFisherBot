@@ -9,6 +9,7 @@ class InfoInterface:
         '_catched_fishes',
         '_catching_errors',
         '_skipped_non_fishes',
+        '_skipped_in_row',
         '_session_start_datetime',
     )
 
@@ -17,6 +18,7 @@ class InfoInterface:
         self._catched_fishes: int = 0
         self._catching_errors: int = 0
         self._skipped_non_fishes: int = 0
+        self._skipped_in_row: int = 0
         self._session_start_datetime: datetime = datetime.now()
 
     @property
@@ -30,6 +32,10 @@ class InfoInterface:
     @property
     def skipped_non_fishes(self) -> int:
         return self._skipped_non_fishes
+
+    @property
+    def skipped_in_row(self) -> int:
+        return self._skipped_in_row
 
     @property
     def session_start_datetime(self) -> datetime:

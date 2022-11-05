@@ -24,6 +24,7 @@ class BotInfoApiRouter(APIRouter):
                 catched_fishes=bot_instance.catched_fishes,
                 catching_errors=bot_instance.catching_errors,
                 skipped_non_fishes=bot_instance.skipped_non_fishes,
+                skipped_in_row=bot_instance.skipped_in_row,
                 session_start_datetime=bot_instance.session_start_datetime,
                 buffs=list(bot_instance.buffs)
             ),

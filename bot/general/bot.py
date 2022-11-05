@@ -31,7 +31,6 @@ class FisherBot(InfoInterface):
         '_bobber_scanner',
         '_buffs_controller',
         '_hsv_bobber_scanner',
-        '_skipped_fishes_in_row',
         '_custom_catching_region',
         '_catching_bobber_scanner',
         '_fish_catching_distance_scanner',
@@ -43,8 +42,6 @@ class FisherBot(InfoInterface):
 
     def __init__(self) -> None:
         super().__init__()
-
-        self._skipped_fishes_in_row: int = 0
 
         self.is_running: bool = True
         self._events_loop: EventsLoop = EventsLoop(self)
@@ -354,7 +351,7 @@ class FisherBot(InfoInterface):
 
                 self._cancel_any_action()
                 self._skipped_non_fishes += 1
-                self._skipped_fishes_in_row += 1
+                self._skipped_in_row += 1
 
                 return False
 
@@ -433,7 +430,7 @@ class FisherBot(InfoInterface):
 
             need_to_catch_fish = self._prepare_for_catching()
             if need_to_catch_fish:
-                self._skipped_fishes_in_row = 0
+                self._skipped_in_row = 0
                 fish_is_catched = self._catch_fish()
 
             sleep_time = self._define_sleep_value(fish_is_catched)
