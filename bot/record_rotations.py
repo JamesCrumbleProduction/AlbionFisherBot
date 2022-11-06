@@ -151,7 +151,7 @@ class RotationsRecorder:
             while True:
 
                 if keyboard.is_pressed(STOP_RECORDING_BUTTON):
-                    if len(self._record_buffer) != 0 and len(self._catching_region_buffer) == 2:
+                    if len(self._record_buffer) != 0 and (len(self._catching_region_buffer) == 2 or to_location_key == 'A'):
                         print(f'SAVING RECORD TO "{to_location_key}" LOCATION')
                         break
 
