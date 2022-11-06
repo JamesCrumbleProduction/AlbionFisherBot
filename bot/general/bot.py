@@ -1,15 +1,19 @@
+import os
 import time
+import orjson
 import random
 
 from typing import Iterator
 
 from .settings import settings
+from .components.schemas import Status
+from .components.rotations import Rotations
 from .services.logger import FISHER_BOT_LOGGER
 from .components.events_loop import EventsLoop
 from .components.info_interface import InfoInterface
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
-from .components.settings import settings as componenets_settings
+from .components.settings import settings as components_settings
 from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import (
     Region,
@@ -22,17 +26,19 @@ from .components.world_to_screen import (
     ThreadedTemplateScanner,
 )
 
+ROOT_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
 
 class FisherBot(InfoInterface):
 
     __slots__ = (
         'is_running',
+        '_rotations',
         '_events_loop',
         '_bobber_scanner',
+        '_catching_region',
         '_buffs_controller',
         '_hsv_bobber_scanner',
-        '_skipped_fishes_in_row',
-        '_custom_catching_region',
         '_catching_bobber_scanner',
         '_fish_catching_distance_scanner',
         '_fish_distance_catched_threshold',
@@ -44,12 +50,11 @@ class FisherBot(InfoInterface):
     def __init__(self) -> None:
         super().__init__()
 
-        self._skipped_fishes_in_row: int = 0
-
         self.is_running: bool = True
+        self._rotations: Rotations = Rotations()
         self._events_loop: EventsLoop = EventsLoop(self)
 
-        self._custom_catching_region: Region | None = None
+        self._catching_region: Region | None = self._init_catching_region()
 
         self._init_bobber_scanners()
         self._init_catching_thresholds()
@@ -60,16 +65,47 @@ class FisherBot(InfoInterface):
     def buffs(self) -> Iterator[BuffInfo]:
         yield from self._buffs_controller.buffs
 
+    @property
+    def current_location(self) -> str:
+        return self._rotations.current_location
+
     def set_new_catching_region(self, new_region: Region) -> None:
-        self._custom_catching_region = new_region
+        self._catching_region = new_region
         FISHER_BOT_LOGGER.info(
-            f'NEW "{self._custom_catching_region}" CATCHING REGION WAS SETTED UP'
+            f'NEW "{self._catching_region}" CATCHING REGION WAS SETTED UP'
         )
+
+    def change_status(self, status: Status, call_from_server: bool = False) -> None:
+        if self._status is Status.RELOCATING and call_from_server:
+            FISHER_BOT_LOGGER.info('CANNOT CHANGE STATUS COUSE BOT IS RELOCATING')
+            return
+
+        if status is Status.CATCHING and self._catching_region is None:
+            FISHER_BOT_LOGGER.warning('CANNOT START CATCHING FISH COUSE CATCHING REGION WAS NOT SETTED UP')
+            return
+
+        if self._status is not Status.PAUSING and status is Status.PAUSED:
+            status = Status.PAUSING
+
+        self._status = status
+
+    def save_current_location(self) -> None:
+        if self.current_location == '':
+            return
+
+        with open(os.path.join(ROOT_PATH, components_settings.LAST_LOCATION_FILENAME), 'wb') as handle:
+            handle.write(orjson.dumps({'last_location': self.current_location}))
+
+    def _init_catching_region(self) -> Region | None:
+        if self.current_location == '':
+            return
+
+        return self._rotations.get_location_data(self.current_location).catching_region
 
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
         self._hsv_bobber_scanner = HSVBobberScanner(
-            componenets_settings.HSV_CONFIGS.BOBBER_RANGES
+            components_settings.HSV_CONFIGS.BOBBER_RANGES
         )
         self._bobber_scanner = ThreadedTemplateScanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
@@ -79,21 +115,20 @@ class FisherBot(InfoInterface):
     def _init_catching_thresholds(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING CATCHING THRESHOLDS')
         self._fish_distance_catched_threshold = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left + (
-                componenets_settings.REGIONS.CATCHING_BAR.width * 0.8
-            )
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.8
         )
         self._catching_bar_mouse_hold_threshold = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.7
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.7
         )
         self._is_fish_checking_threshold_left = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.4
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.4
         )
         self._is_fish_checking_threshold_right = int(
-            componenets_settings.REGIONS.CATCHING_BAR.left
-            + componenets_settings.REGIONS.CATCHING_BAR.width * 0.6
+            components_settings.REGIONS.CATCHING_BAR.left
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.6
         )
 
     def _init_catching_scanners(self) -> None:
@@ -101,12 +136,12 @@ class FisherBot(InfoInterface):
         self._fish_catching_distance_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'fish_catched_distance'
-            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=components_settings.REGIONS.CATCHING_BAR
         )
         self._catching_bobber_scanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.status_bar_components.get(
                 'bobber_status_bar'
-            ), threshold=0.8, region=componenets_settings.REGIONS.CATCHING_BAR
+            ), threshold=0.8, region=components_settings.REGIONS.CATCHING_BAR
         )
 
     def _init_buffs_controller(self) -> None:
@@ -123,15 +158,15 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=bait_buff.is_active,
-                    threshold=0.6, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.6, region=components_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     bait_buff.empty_slot,
-                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                    threshold=0.7, region=components_settings.REGIONS.BUFFS_UTILITY_BAR
                 ),
                 in_inventory_item_scanner=TemplateScanner(
                     bait_buff.item,
-                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                    threshold=0.7, region=components_settings.REGIONS.INVENTORY
                 )
             ),
             Buff(
@@ -141,15 +176,15 @@ class FisherBot(InfoInterface):
                 ),
                 is_active_scanner=TemplateScanner(
                     iterable_templates=eat_buff.is_active,
-                    threshold=0.7, region=componenets_settings.REGIONS.ACTIVE_BUFFS
+                    threshold=0.7, region=components_settings.REGIONS.ACTIVE_BUFFS
                 ),
                 empty_slot_scanner=TemplateScanner(
                     eat_buff.empty_slot,
-                    threshold=0.7, region=componenets_settings.REGIONS.BUFFS_UTILITY_BAR
+                    threshold=0.7, region=components_settings.REGIONS.BUFFS_UTILITY_BAR
                 ),
                 in_inventory_item_scanner=TemplateScanner(
                     eat_buff.item,
-                    threshold=0.7, region=componenets_settings.REGIONS.INVENTORY
+                    threshold=0.7, region=components_settings.REGIONS.INVENTORY
                 )
             )
         )
@@ -176,6 +211,14 @@ class FisherBot(InfoInterface):
     def _define_sleep_value(self, fish_is_catched: bool) -> float:
         '''Used for testing purposes only'''
         return settings.NEW_FISH_CATCHING_AWAITING
+
+    def _should_relocate(self) -> bool:
+        if self._skipped_in_row == 1:
+            return True
+        # if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
+        #     return True
+
+        return False
 
     def _calc_bobber_offset(self, bobber_region: Region, in_cycle: bool = True) -> int:
 
@@ -261,21 +304,16 @@ class FisherBot(InfoInterface):
 
             time.sleep(0.1)
 
-    def _select_new_mouse_position_for_fishing(self, static_mouse_pos: Coordinate) -> None:
-        if self._custom_catching_region is None:
-            x_new = max(0, static_mouse_pos.x + random.randint(
-                -settings.CATCHING_AREA_RANGE[0], settings.CATCHING_AREA_RANGE[0]
-            ))
-            y_new = max(0, static_mouse_pos.y + random.randint(
-                -settings.CATCHING_AREA_RANGE[1], settings.CATCHING_AREA_RANGE[1]
-            ))
-        else:
-            x_new = random.randint(
-                *sorted([self._custom_catching_region.left, self._custom_catching_region.width])
-            )
-            y_new = random.randint(
-                *sorted([self._custom_catching_region.top, self._custom_catching_region.height])
-            )
+    def _select_new_mouse_position_for_fishing(self) -> None:
+        if self._catching_region is None:
+            raise ValueError('CATGHING REGION CANNOT BE NULL')
+
+        x_new = random.randint(
+            *sorted([self._catching_region.left, self._catching_region.width])
+        )
+        y_new = random.randint(
+            *sorted([self._catching_region.top, self._catching_region.height])
+        )
 
         CommonIOController.move(Coordinate(x=x_new, y=y_new))
 
@@ -354,7 +392,7 @@ class FisherBot(InfoInterface):
 
                 self._cancel_any_action()
                 self._skipped_non_fishes += 1
-                self._skipped_fishes_in_row += 1
+                self._skipped_in_row += 1
 
                 return False
 
@@ -420,20 +458,45 @@ class FisherBot(InfoInterface):
 
         return fish_is_catched
 
-    def run(self) -> None:
-        static_mouse_pos = CommonIOController.mouse_position()
+    def _prepare_to_relocate(self) -> None:
+        CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+        time.sleep(settings.SIT_TO_ANIMAL_TIMEOUT)
 
+    def _prepare_to_catching_when_relocated(self) -> None:
+        CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+
+    def _relocate_to_next_location(self) -> None:
+        new_location_key = self._rotations.define_new_location_for_relocating()
+        location = self._rotations.get_location_data(new_location_key)
+
+        self.change_status(Status.RELOCATING)
+
+        self._prepare_to_relocate()
+        self._rotations.resolve_path(location)
+        self._prepare_to_catching_when_relocated()
+
+        self.set_new_catching_region(location.catching_region)
+
+        self.change_status(Status.CATCHING)
+        self._rotations.current_location = location.key
+        time.sleep(0.5)
+
+    def run(self) -> None:
         while True:
             fish_is_catched: bool = False
-            self._events_loop()
 
+            if self._should_relocate():
+                if self.current_location != '':
+                    self._relocate_to_next_location()
+
+            self._events_loop()
             self._buffs_controller.check_and_activate_buffs()
-            self._select_new_mouse_position_for_fishing(static_mouse_pos)
+            self._select_new_mouse_position_for_fishing()
             self._catch_when_fish_awaiting()
 
             need_to_catch_fish = self._prepare_for_catching()
             if need_to_catch_fish:
-                self._skipped_fishes_in_row = 0
+                self._skipped_in_row = 0
                 fish_is_catched = self._catch_fish()
 
             sleep_time = self._define_sleep_value(fish_is_catched)

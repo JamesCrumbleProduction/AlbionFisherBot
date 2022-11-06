@@ -21,6 +21,7 @@ def main() -> int:
         logging.critical(exception, exc_info=True)
     finally:
         FISHER_BOT.is_running = False
+        FISHER_BOT.save_current_location()
 
     return 0
 

@@ -42,17 +42,22 @@ class BuffsController:
         return grab_screen(settings.REGIONS.INVENTORY)
 
     def _iterate_through_inventory(self) -> Iterator[np.ndarray]:
-        CommonIOController.move(monitor_center())
+        monitor_center_ = monitor_center()
+        CommonIOController.move(monitor_center_)
 
-        time.sleep(0.1)  # sync img buffer
+        time.sleep(0.5)  # sync img buffer
         past_inventory_image = self._grab_inventory_region_img()
         yield past_inventory_image
-        CommonIOController.move(Coordinate(
-            x=settings.REGIONS.INVENTORY.left + random.randint(3, 10),
-            y=settings.REGIONS.INVENTORY.top + random.randint(3, 10)
-        ))
 
         while True:
+
+            CommonIOController.move(Coordinate(
+                x=settings.REGIONS.INVENTORY.left + random.randint(3, 10),
+                y=settings.REGIONS.INVENTORY.top + random.randint(3, 10)
+            ))
+            CommonIOController.scroll(1, ScrollDirection.DOWN)
+            CommonIOController.move(monitor_center_)
+            time.sleep(1.5)
 
             new_inventory_image = self._grab_inventory_region_img()
 
@@ -64,8 +69,6 @@ class BuffsController:
 
             yield new_inventory_image
             past_inventory_image = new_inventory_image
-            CommonIOController.scroll(1, ScrollDirection.DOWN)
-            time.sleep(1.5)
 
     def _set_items_to_utility_bar(self, initing_buffs: list[Buff]) -> tuple[float, list[Buff]]:
         self._open_inventory()
@@ -84,7 +87,7 @@ class BuffsController:
             for buff in initing_buffs:
                 if not setted_buffs_contains(buff) and buff.find_and_set_item(inventory_part_image):
                     setted_buffs.append(buff)
-                    if first_setted_buff_time is None:
+                    if first_setted_buff_time == 0:
                         first_setted_buff_time = time.time()
 
             if len(setted_buffs) == len(initing_buffs):

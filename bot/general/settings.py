@@ -14,9 +14,10 @@ class Settings(BaseSettings):
         1, 1.05, 1.07, 1.073, 1.1
     ]
 
+    SIT_TO_ANIMAL_BUTTON: str = 'a'
+    SIT_TO_ANIMAL_TIMEOUT: float = 4.0
     CANCEL_ANY_ACTION_BUTTON: str = 's'
     NEW_FISH_CATCHING_AWAITING: float = 1.8
-    CATCHING_AREA_RANGE: tuple[int, int] = (30, 100)  # (x, y)
     BOBBER_CATCH_THRESHOLD: int = 30  # in percentage
     BOBBER_OFFSET_CALCULATION_CYCLES: int = 10
     RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds

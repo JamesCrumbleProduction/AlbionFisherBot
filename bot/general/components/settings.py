@@ -71,14 +71,16 @@ class IOServiceSettings(BaseSettings):
         0.25,
         0.3,
     ]
-    DRAW_STEPS: int = 40  # total times to update cursor
+    DRAW_STEPS: int = 60  # total times to update cursor
 
 
 class ComponentsSettings(BaseSettings):
 
-    REGIONS = Regions()
-    HSV_CONFIGS = HSVConfigs()
-    IO_SERVICE = IOServiceSettings()
+    REGIONS: Regions = Regions()
+    HSV_CONFIGS: HSVConfigs = HSVConfigs()
+    IO_SERVICE: IOServiceSettings = IOServiceSettings()
+
+    LAST_LOCATION_FILENAME: str = 'last_location.json'
 
 
 settings = ComponentsSettings()

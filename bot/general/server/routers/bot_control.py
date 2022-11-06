@@ -10,7 +10,7 @@ class BotControlApiRouter(APIRouter):
         super().__init__(*args, **kwargs)
 
         def change_status(status: Status) -> None:
-            bot_instance.change_status(status)
+            bot_instance.change_status(status, call_from_server=True)
 
         self.add_api_route(
             path='/change_status',
