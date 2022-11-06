@@ -213,10 +213,8 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _should_relocate(self) -> bool:
-        if self._skipped_in_row == 1:
+        if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
             return True
-        # if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
-        #     return True
 
         return False
 
