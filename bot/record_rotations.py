@@ -94,8 +94,7 @@ class RotationsRecorder:
                 else:
                     self._catching_region_buffer[1] = (x, y)
 
-                if not self._start_location_was_inited:
-                    print(f'CATCHING REGION FOR START LOCATION IS {self._catching_region_buffer}')
+                print(f'SELECTED CATCHING REGION IS {self._catching_region_buffer}')
 
         elif button is Button.left:
             self._is_recording = is_pressed
@@ -152,8 +151,15 @@ class RotationsRecorder:
             while True:
 
                 if keyboard.is_pressed(STOP_RECORDING_BUTTON):
-                    print(f'SAVING RECORD TO "{to_location_key}" LOCATION')
-                    break
+                    if len(self._record_buffer) != 0 and len(self._catching_region_buffer) == 2:
+                        print(f'SAVING RECORD TO "{to_location_key}" LOCATION')
+                        break
+
+                    if len(self._record_buffer) == 0:
+                        print('LOOKS LIKE RECORD BUFFER IS EMPTY. RECORD PATH THEN SAVE IT')
+
+                    if len(self._catching_region_buffer) != 2:
+                        print('TO SAVE LOCATION RECORD YOU NEED TO SETUP CATCHING REGION FOR THIS LOCATION')
 
                 if keyboard.is_pressed(SWITCH_RECORD_TO_CLOSING_CYCLE_BUTTON):
                     print('RECORDING PATH TO START LOCATION (CYCLE WILL CLOSED)')
