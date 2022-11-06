@@ -13,20 +13,17 @@ BOBBER_CORNER_EXPAND_PERCENTAGE: int = 5
 def _define_monitor_region() -> Region:
     for monitor in get_monitors():
         if monitor.is_primary or (monitor.x == 0 and monitor.y == 0):
-            # if monitor.width == 1024 and monitor.height == 768:
-            return Region(left=0, top=0, width=monitor.width, height=monitor.height)
+            if monitor.width == 1024 and monitor.height == 768:
+                return Region(left=0, top=0, width=monitor.width, height=monitor.height)
 
-            # raise WrongScreenResolution('Support only 1024x768 screen resolution')
+            raise WrongScreenResolution('Support only 1024x768 screen resolution')
 
     raise MonitorDefiningError('Cannot define default monitor region...')
 
 
 def monitor_center() -> Coordinate:
     monitor_region = _define_monitor_region()
-    return Coordinate(
-        x=monitor_region.width // 2,
-        y=monitor_region.height // 2
-    )
+    return Coordinate(x=monitor_region.width // 2, y=monitor_region.height // 2)
 
 
 def get_screen_part_region(screen_part: ScreenPart) -> Region:

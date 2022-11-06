@@ -23,10 +23,10 @@ class ValidatedTemplateData(BaseModel):
 
 
 class Region(BaseModel):
+    top: int
+    left: int
     width: int
     height: int
-    left: int
-    top: int
 
 
 class HSVRegion(BaseModel):

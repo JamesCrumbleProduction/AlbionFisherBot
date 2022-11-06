@@ -80,5 +80,7 @@ class ComponentsSettings(BaseSettings):
     HSV_CONFIGS: HSVConfigs = HSVConfigs()
     IO_SERVICE: IOServiceSettings = IOServiceSettings()
 
+    LAST_LOCATION_FILENAME: str = 'last_location.json'
+
 
 settings = ComponentsSettings()

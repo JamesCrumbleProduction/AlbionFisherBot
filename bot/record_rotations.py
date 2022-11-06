@@ -1,3 +1,4 @@
+import os
 import time
 import orjson
 import string
@@ -24,6 +25,8 @@ path literal (char 2) catching mouse area (char 2) record elements ([int, int, f
 
 '''
 
+ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
+
 LOCATION_KEYS: str = string.ascii_uppercase
 
 STOP_RECORDING_BUTTON: str = '\\'
@@ -44,7 +47,7 @@ class Location(BaseModel):
     record: list[tuple[int, int, float]] = None  # type: ignore
 
     # catching area of this location
-    catching_area: list[tuple[int, int]]  # x, y
+    catching_region: list[tuple[int, int]]  # x, y
 
     def init_record(self, record: list[tuple[int, int, float]]) -> None:
         if self.record is None:
@@ -111,12 +114,18 @@ class RotationsRecorder:
                 if keyboard.is_pressed(STOP_RECORDING_BUTTON):
                     break
 
-                time.sleep(0.1)
+                time.sleep(0.05)
 
             if len(self._catching_region_buffer) == 2:
+                left_top_coord = min(self._catching_region_buffer, key=lambda v: v[0])  # type: ignore
+                right_bottom_coord = max(self._catching_region_buffer, key=lambda v: v[0])  # type: ignore
+
                 self._locations.append(Location(
                     key='A',
-                    catching_area=self._catching_region_buffer.copy()
+                    catching_region=[
+                        (left_top_coord[1], left_top_coord[0]),
+                        (right_bottom_coord[0], right_bottom_coord[1])
+                    ]
                 ))
                 self._start_location_was_inited = True
             else:
@@ -150,17 +159,24 @@ class RotationsRecorder:
                     print('RECORDING PATH TO START LOCATION (CYCLE WILL CLOSED)')
                     to_location_key = 'A'
 
-                time.sleep(0.1)
+                time.sleep(0.05)
 
         if to_location_key == 'A' and len(self._record_buffer) != 0:
             self._locations[0].init_record(self._record_buffer.copy())
             self._cycle_was_closed = True
             print(f'RECORD FOR "{to_location_key}" LOCATION WAS SAVED (CYCLE WAS CLOSED)')
         elif len(self._record_buffer) != 0 and len(self._catching_region_buffer) == 2 and to_location_key != 'A':
+
+            left_top_coord = min(self._catching_region_buffer, key=lambda v: v[0])  # type: ignore
+            right_bottom_coord = max(self._catching_region_buffer, key=lambda v: v[0])  # type: ignore
+
             self._locations.append(Location(
                 key=to_location_key,
                 record=self._record_buffer.copy(),
-                catching_area=self._catching_region_buffer.copy()
+                catching_region=[
+                    (left_top_coord[1], left_top_coord[0]),
+                    (right_bottom_coord[0], right_bottom_coord[1])
+                ]
             ))
             print(f'RECORD FOR "{to_location_key}" LOCATION WAS SAVED')
         else:
@@ -180,7 +196,7 @@ class RotationsRecorder:
             )
             return False
 
-        with open('rotations.json', 'wb') as handle:
+        with open(os.path.join(ROOT_PATH, 'rotations.json'), 'wb') as handle:  # this filename using in bot so don't change it
             handle.write(orjson.dumps({
                 location.key: location.dict()
                 for location in self._locations
@@ -191,7 +207,7 @@ class RotationsRecorder:
 
 def main() -> int:
 
-    sleep_seconds: int = 2
+    sleep_seconds: int = 1
     recorder = RotationsRecorder()
     print(HELP)
 

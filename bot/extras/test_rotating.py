@@ -5,7 +5,6 @@ import keyboard
 from typing import Any
 from pynput.mouse import Listener, Controller, Button
 
-from bot.general.components.io_controllers import CommonIOController
 
 MOUSE = Controller()
 
@@ -80,7 +79,7 @@ def reproduce_path() -> None:
 
             prev_time: float = 0
             record = path_data['record']
-            catching_area = path_data['catching_area']
+            catching_area = path_data['catching_region']
 
             time.sleep(5)
 
@@ -88,8 +87,8 @@ def reproduce_path() -> None:
                 print(moving)
                 if i == 0:
                     prev_time = moving[2]
-                    CommonIOController.move((moving[0], moving[1]))
-                    CommonIOController.press_mouse_left_button()
+                    MOUSE.position = (moving[0], moving[1])
+                    MOUSE.press(Button.left)
                     prev_time = moving[2]
                     continue
                 else:
@@ -98,7 +97,7 @@ def reproduce_path() -> None:
                 time.sleep(moving[2] - prev_time)
                 prev_time = moving[2]
 
-            CommonIOController.release_mouse_left_button()
+            MOUSE.release(Button.left)
             print(catching_area)
 
         print(f'FINISH ATTEMPT NUMBER {attempts}')

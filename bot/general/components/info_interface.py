@@ -44,9 +44,3 @@ class InfoInterface:
     @property
     def status(self) -> Status:
         return self._status
-
-    def change_status(self, status: Status) -> None:
-        if self._status is not Status.PAUSING and status is Status.PAUSED:
-            status = Status.PAUSING
-
-        self._status = status

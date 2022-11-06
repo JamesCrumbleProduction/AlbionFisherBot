@@ -22,8 +22,11 @@ class CommonIOController:
     mouse_right_button_is_pressed: bool = False
 
     @staticmethod
+    def constant_move(coordinate: tuple[int, int]) -> None:
+        MOUSE.position = coordinate
+
+    @staticmethod
     def move(coordinate: Coordinate) -> None:
-        coordinate = Coordinate(x=coordinate[0], y=coordinate[1])
         # Looks like Albion have something to detect fast moving
         # MOUSE.position = coordinate.tuple_format()
         CommonIOController.smooth_move(coordinate)
