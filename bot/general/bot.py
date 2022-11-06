@@ -1,3 +1,4 @@
+import os
 import time
 import orjson
 import random
@@ -25,6 +26,8 @@ from .components.world_to_screen import (
     ThreadedTemplateScanner,
 )
 
+ROOT_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
 
 class FisherBot(InfoInterface):
 
@@ -51,7 +54,7 @@ class FisherBot(InfoInterface):
         self._rotations: Rotations = Rotations()
         self._events_loop: EventsLoop = EventsLoop(self)
 
-        self._catching_region: Region | None = None
+        self._catching_region: Region | None = self._init_catching_region()
 
         self._init_bobber_scanners()
         self._init_catching_thresholds()
@@ -87,9 +90,17 @@ class FisherBot(InfoInterface):
         self._status = status
 
     def save_current_location(self) -> None:
-        if self.current_location != '':
-            with open(components_settings.LAST_LOCATION_FILENAME, 'wb') as handle:
-                handle.write(orjson.dumps({'last_location': self.current_location}))
+        if self.current_location == '':
+            return
+
+        with open(os.path.join(ROOT_PATH, components_settings.LAST_LOCATION_FILENAME), 'wb') as handle:
+            handle.write(orjson.dumps({'last_location': self.current_location}))
+
+    def _init_catching_region(self) -> Region | None:
+        if self.current_location == '':
+            return
+
+        return self._rotations.get_location_data(self.current_location).catching_region
 
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
@@ -202,8 +213,10 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _should_relocate(self) -> bool:
-        if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
+        if self._skipped_in_row == 1:
             return True
+        # if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
+        #     return True
 
         return False
 
@@ -464,15 +477,19 @@ class FisherBot(InfoInterface):
 
         self.set_new_catching_region(location.catching_region)
 
+        self.change_status(Status.CATCHING)
+        self._rotations.current_location = location.key
+        time.sleep(0.5)
+
     def run(self) -> None:
         while True:
             fish_is_catched: bool = False
-            self._events_loop()
 
             if self._should_relocate():
                 if self.current_location != '':
                     self._relocate_to_next_location()
 
+            self._events_loop()
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing()
             self._catch_when_fish_awaiting()

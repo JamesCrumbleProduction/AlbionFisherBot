@@ -31,7 +31,10 @@ class RotationsStructure:
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls, *args, **kwargs)
+            cls._instance._locations_keys = None  # type: ignore
             cls._instance._init_locations()
+
+        return cls._instance
 
     def __init__(self):
         self._locations_keys: list[str]
@@ -43,9 +46,9 @@ class RotationsStructure:
     def _serialize_rotations(self) -> Iterator[Location]:
 
         with open(ROTATIONS_FILE_PATH, 'rb') as handle:
-            raw_locations_data: list[dict] = orjson.loads(handle.read())
+            raw_locations_data: dict[str, dict] = orjson.loads(handle.read())
 
-            for raw_location in raw_locations_data:
+            for raw_location in raw_locations_data.values():
                 raw_catching_region: list[tuple[int, int]] = raw_location['catching_region']
 
                 yield Location(
