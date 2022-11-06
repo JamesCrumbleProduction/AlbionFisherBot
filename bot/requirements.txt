@@ -7,3 +7,4 @@ screeninfo
 fastapi
 uvicorn
 keyboard
+orjson
