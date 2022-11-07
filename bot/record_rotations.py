@@ -4,8 +4,10 @@ import orjson
 import string
 import keyboard
 
+from mss import mss, tools
 from pydantic import BaseModel
 from pynput.mouse import Listener, Button
+
 
 '''
 MAY BE FOR FUTURE
@@ -127,6 +129,7 @@ class RotationsRecorder:
                     ]
                 ))
                 self._start_location_was_inited = True
+                self.save_location_snapshot('A')
             else:
                 print(
                     'SOMETHING WENT WRONG WITH CATCHING REGION RECORDING FOR START LOCATION\n\t'
@@ -184,6 +187,7 @@ class RotationsRecorder:
                     (right_bottom_coord[0], right_bottom_coord[1])
                 ]
             ))
+            self.save_location_snapshot(to_location_key)
             print(f'RECORD FOR "{to_location_key}" LOCATION WAS SAVED')
         else:
             print(
@@ -193,6 +197,15 @@ class RotationsRecorder:
             )
 
         self._clear_buffers()
+
+    def save_location_snapshot(self, location_key: str) -> None:
+        if not os.path.exists(os.path.join(ROOT_PATH, 'locations_snapshots')):
+            os.mkdir(os.path.join(ROOT_PATH, 'locations_snapshots'))
+
+        with mss() as base:
+            with open(os.path.join(ROOT_PATH, 'locations_snapshots', f'snapshot of {location_key} location.png'), 'wb') as handle:
+                screenshot = base.grab((0, 0, 1024, 768))
+                handle.write(tools.to_png(screenshot.rgb, screenshot.size))  # type: ignore
 
     def save(self) -> bool:
         if not self._cycle_was_closed:
