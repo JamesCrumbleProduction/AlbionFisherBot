@@ -32,11 +32,16 @@ class BotInfoApiRouter(APIRouter):
             response_model=BotInfo,
             status_code=200
         )
-
         self.add_api_route(
             path='/current_location',
             endpoint=lambda: bot_instance.current_location,
             methods=['GET'],
             response_model=str,
+            status_code=200
+        )
+        self.add_api_route(
+            path='/session_snapshot',
+            endpoint=bot_instance.get_last_snapshot,
+            methods=['GET'],
             status_code=200
         )

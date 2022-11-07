@@ -7,17 +7,10 @@ import orjson
 from typing import Iterator
 
 from .schemas import Location
-from .settings import settings
 from .io_controllers import CommonIOController
 from .world_to_screen import Region, Coordinate
 from ..services.logger import COMPONENTS_LOGGER
-
-ROOT_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-
-ROTATIONS_FILENAME: str = 'rotations.json'
-ROTATIONS_FILE_PATH: str = os.path.join(ROOT_PATH, ROTATIONS_FILENAME)
-
-LAST_LOCATION_FILE_PATH: str = os.path.join(ROOT_PATH, settings.LAST_LOCATION_FILENAME)
+from .paths import ROTATIONS_FILE_PATH, LAST_LOCATION_FILE_PATH
 
 
 class RotationsError(BaseException):

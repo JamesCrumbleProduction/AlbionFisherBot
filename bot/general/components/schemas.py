@@ -1,5 +1,8 @@
+import io
+
 from enum import Enum
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 
 from .world_to_screen import Region
 
@@ -17,3 +20,18 @@ class Location(BaseModel):
     key: str
     record: list[tuple[int, int, float]]
     catching_region: Region
+
+
+class LastSnapshot(StreamingResponse):
+
+    def __init__(
+        self,
+        content: io.BytesIO,
+        filename: str
+    ) -> None:
+        super().__init__(
+            content,
+            headers={
+                'Content-Disposition': f'attachment; filename={filename}.png'
+            }
+        )
