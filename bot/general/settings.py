@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     BOBBER_OFFSET_CALCULATION_CYCLES: int = 10
     BOBBER_REGION_TIMEOUT_FINDING: float = 10.0
     RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds
+    REAL_FISH_BOBBER_FINDING_TIMEOUT: float = 2.0
     THREADED_BOBBER_SCANNER: bool = True
 
     SERVER_PORT: int = 4000
