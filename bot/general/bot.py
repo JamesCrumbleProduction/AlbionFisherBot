@@ -1,4 +1,3 @@
-import os
 import time
 import orjson
 import random
@@ -11,6 +10,7 @@ from .components.rotations import Rotations
 from .services.logger import FISHER_BOT_LOGGER
 from .components.events_loop import EventsLoop
 from .components.info_interface import InfoInterface
+from .components.paths import LAST_LOCATION_FILE_PATH
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.settings import settings as components_settings
@@ -25,8 +25,6 @@ from .components.world_to_screen import (
     get_screen_part_region,
     ThreadedTemplateScanner,
 )
-
-ROOT_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
 
 class FisherBot(InfoInterface):
@@ -93,7 +91,7 @@ class FisherBot(InfoInterface):
         if self.current_location == '':
             return
 
-        with open(os.path.join(ROOT_PATH, components_settings.LAST_LOCATION_FILENAME), 'wb') as handle:
+        with open(LAST_LOCATION_FILE_PATH, 'wb') as handle:
             handle.write(orjson.dumps({'last_location': self.current_location}))
 
     def _init_catching_region(self) -> Region | None:
@@ -128,7 +126,7 @@ class FisherBot(InfoInterface):
         )
         self._is_fish_checking_threshold_right = int(
             components_settings.REGIONS.CATCHING_BAR.left
-            + components_settings.REGIONS.CATCHING_BAR.width * 0.6
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.7
         )
 
     def _init_catching_scanners(self) -> None:
@@ -213,10 +211,8 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _should_relocate(self) -> bool:
-        if self._skipped_in_row == 1:
+        if self._skipped_in_row % 2 == 0 and self._skipped_in_row != 0:
             return True
-        # if self._skipped_in_row % 5 == 0 and self._skipped_in_row != 0:
-        #     return True
 
         return False
 
@@ -454,7 +450,7 @@ class FisherBot(InfoInterface):
                 CommonIOController.release_mouse_left_button()
                 break
 
-            time.sleep(0.1)
+            time.sleep(0.2)
 
         return fish_is_catched
 
@@ -484,6 +480,7 @@ class FisherBot(InfoInterface):
     def run(self) -> None:
         while True:
             fish_is_catched: bool = False
+            self._save_last_snapshot()
 
             if self._should_relocate():
                 if self.current_location != '':

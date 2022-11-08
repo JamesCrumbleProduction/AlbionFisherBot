@@ -26,6 +26,10 @@ def monitor_center() -> Coordinate:
     return Coordinate(x=monitor_region.width // 2, y=monitor_region.height // 2)
 
 
+def monitor_region() -> Region:
+    return _define_monitor_region()
+
+
 def get_screen_part_region(screen_part: ScreenPart) -> Region:
     monitor_center_ = monitor_center()
     monitor_region_ = _define_monitor_region()

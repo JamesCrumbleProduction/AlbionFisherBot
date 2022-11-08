@@ -1,6 +1,7 @@
 __pycache__/
 venv
-*test.png
-*logging.log
-*rotations.json
-*last_location.json
+test.png
+logging.log
+rotations.json
+last_location.json
+locations_snapshots/
