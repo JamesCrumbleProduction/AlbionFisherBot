@@ -122,7 +122,7 @@ class FisherBot(InfoInterface):
         )
         self._is_fish_checking_threshold_left = int(
             components_settings.REGIONS.CATCHING_BAR.left
-            + components_settings.REGIONS.CATCHING_BAR.width * 0.5
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.4
         )
         self._is_fish_checking_threshold_right = int(
             components_settings.REGIONS.CATCHING_BAR.left
@@ -450,7 +450,7 @@ class FisherBot(InfoInterface):
                 CommonIOController.release_mouse_left_button()
                 break
 
-            time.sleep(0.1)
+            time.sleep(0.2)
 
         return fish_is_catched
 
