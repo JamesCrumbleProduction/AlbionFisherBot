@@ -105,7 +105,9 @@ class FisherBot(InfoInterface):
         self._hsv_bobber_scanner = HSVBobberScanner(
             components_settings.HSV_CONFIGS.BOBBER_RANGES
         )
-        self._bobber_scanner = ThreadedTemplateScanner(
+
+        bobber_templates_scanner = ThreadedTemplateScanner if settings.THREADED_BOBBER_SCANNER else TemplateScanner
+        self._bobber_scanner = bobber_templates_scanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
             threshold=0.6
         )
@@ -258,14 +260,14 @@ class FisherBot(InfoInterface):
             if timeout is not None and time.time() - st > timeout:
                 return
 
+            time.sleep(0.15)
+
     def _find_bobber_region(self) -> Region:
         return self._find_bobber_region_with_timeout()  # type: ignore
 
     def _catch_when_fish_awaiting(self) -> None:
         CommonIOController.press_mouse_button_and_release(
-            settings.THROW_DELAYS[random.randint(
-                0, len(settings.THROW_DELAYS) - 1
-            )]
+            settings.THROW_DELAYS[random.randint(0, len(settings.THROW_DELAYS) - 1)]
         )
         time.sleep(1)
 

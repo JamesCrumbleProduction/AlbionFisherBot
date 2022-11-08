@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     BOBBER_CATCH_THRESHOLD: int = 30  # in percentage
     BOBBER_OFFSET_CALCULATION_CYCLES: int = 10
     RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds
+    THREADED_BOBBER_SCANNER: bool = True
 
     SERVER_PORT: int = 4000
     SERVER_HOST: str = '0.0.0.0'
