@@ -1,0 +1,6 @@
+class FishAwaitingError(BaseException):
+    ...
+
+
+class IsActuallyFishCatchingError(BaseException):
+    ...

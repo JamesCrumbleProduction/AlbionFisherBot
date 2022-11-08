@@ -14,6 +14,7 @@ from .components.paths import LAST_LOCATION_FILE_PATH
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.settings import settings as components_settings
+from .components.exceptions import FishAwaitingError, IsActuallyFishCatchingError
 from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import (
     Region,
@@ -248,16 +249,14 @@ class FisherBot(InfoInterface):
         return condition
 
     def _find_bobber_region_with_timeout(self, timeout: float | None = None) -> Region | None:
-        st: float = time.time()
+        st: float = time.monotonic()
 
         while True:
-            for coordinate in self._bobber_scanner(
-                as_custom_region=self._get_bobber_corner()
-            ).iterate_all_by_first_founded():
+            for coordinate in self._bobber_scanner(as_custom_region=self._get_bobber_corner()).iterate_all_by_first_founded():
                 if coordinate:
                     return coordinate.region
 
-            if timeout is not None and time.time() - st > timeout:
+            if timeout is not None and time.monotonic() - st > timeout:
                 return
 
             time.sleep(0.15)
@@ -271,9 +270,16 @@ class FisherBot(InfoInterface):
         )
         time.sleep(1)
 
-        bobber_region = self._find_bobber_region()
+        bobber_region = self._find_bobber_region_with_timeout(
+            timeout=settings.BOBBER_REGION_TIMEOUT_FINDING
+        )
+        if bobber_region is None:
+            raise FishAwaitingError(
+                f'CANNOT FIND BOBBER REGION FOR "{settings.BOBBER_REGION_TIMEOUT_FINDING}" SECONDS'
+            )
+
         bobber_offset = self._calc_bobber_offset(bobber_region)
-        last_offset_calc_time: float = time.time()
+        last_offset_calc_time: float = time.monotonic()
 
         while True:
             if self._need_to_catch(bobber_region, bobber_offset):
@@ -281,25 +287,19 @@ class FisherBot(InfoInterface):
                 break
 
             if bobber_offset == 0:
-                if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
-                    self._catching_errors += 1
-                    FISHER_BOT_LOGGER.warning(
-                        f'BOBBER OFFSET EQUALS 0 FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
-                    )
-                    break
+                if time.monotonic() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                    raise FishAwaitingError(f'BOBBER OFFSET EQUALS 0 FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS')
 
                 if new_bobber_region := self._find_bobber_region_with_timeout(timeout=5):
                     bobber_offset = self._calc_bobber_offset(new_bobber_region)
                 else:
-                    self._catching_errors += 1
-                    FISHER_BOT_LOGGER.warning(
+                    raise FishAwaitingError(
                         'BOBBER OFFSET EQUALS 0 AND BOBBER REGION CANNOT BE DEFINED '
                         f'FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
                     )
-                    break
 
-            if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
-                last_offset_calc_time = time.time()
+            if time.monotonic() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                last_offset_calc_time = time.monotonic()
                 bobber_offset = self._calc_bobber_offset(bobber_region, in_cycle=False)
                 FISHER_BOT_LOGGER.info(f'NEW BOBBER OFFSET => "{bobber_offset}"')
 
@@ -356,11 +356,7 @@ class FisherBot(InfoInterface):
 
         last_fish_distance_pos = self._fish_catching_distance_scanner.indentify_by_first()
         if last_fish_distance_pos is None:
-            FISHER_BOT_LOGGER.warning(
-                'CANNOT FIND "last_fish_distance_pos" ...'
-            )
-            self._catching_errors += 1
-            return False
+            raise IsActuallyFishCatchingError('CANNOT FIND "last_fish_distance_pos"')
 
         last_fish_distance_pos = (
             last_fish_distance_pos.x - last_fish_distance_pos.region.width // 2
@@ -388,12 +384,6 @@ class FisherBot(InfoInterface):
 
         for _ in range(10):
             if self._catching_bobber_scanner.indentify_by_first():
-                if self._check_if_actually_fish_catching():
-                    return True
-
-                self._cancel_any_action()
-                self._skipped_non_fishes += 1
-                self._skipped_in_row += 1
 
                 return False
 
@@ -498,20 +488,27 @@ class FisherBot(InfoInterface):
             self._events_loop()
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing()
-            self._catch_when_fish_awaiting()
 
-            need_to_catch_fish = self._prepare_for_catching()
-            if need_to_catch_fish:
-                self._skipped_in_row = 0
-                fish_is_catched = self._catch_fish()
+            try:
+                self._catch_when_fish_awaiting()
+                need_to_catch: bool = self._check_if_actually_fish_catching()
+            except (FishAwaitingError, IsActuallyFishCatchingError) as exception:
+                FISHER_BOT_LOGGER.warning(exception)
+                self._catching_errors += 1
+                self._cancel_any_action()
+            else:
+                if need_to_catch:
+                    fish_is_catched = self._catch_fish()
+                    if fish_is_catched:
+                        self._skipped_in_row = 0
+                else:
+                    self._skipped_non_fishes += 1
+                    self._skipped_in_row += 1
 
             sleep_time = self._define_sleep_value(fish_is_catched)
 
             FISHER_BOT_LOGGER.info(
                 f'WAITING "{sleep_time}" SECONDS BEFORE NEW CATCHING'
-            )
-            FISHER_BOT_LOGGER.debug(
-                f'NEED_TO_CATCH_FISH => {need_to_catch_fish}, FISH_IS_CATCHED => {fish_is_catched}'
             )
             time.sleep(sleep_time)
 
