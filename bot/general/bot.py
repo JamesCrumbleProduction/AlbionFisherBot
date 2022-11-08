@@ -5,15 +5,16 @@ import random
 from typing import Iterator
 
 from .settings import settings
-from .components.schemas import Status
 from .components.rotations import Rotations
 from .services.logger import FISHER_BOT_LOGGER
 from .components.events_loop import EventsLoop
+from .components.schemas import Status, Location
 from .components.info_interface import InfoInterface
 from .components.paths import LAST_LOCATION_FILE_PATH
 from .components.io_controllers import CommonIOController
 from .components.templates import FISHER_BOT_COMPILED_TEMPLATES
 from .components.settings import settings as components_settings
+from .components.exceptions import FishAwaitingError, IsActuallyFishCatchingError
 from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import (
     Region,
@@ -105,7 +106,9 @@ class FisherBot(InfoInterface):
         self._hsv_bobber_scanner = HSVBobberScanner(
             components_settings.HSV_CONFIGS.BOBBER_RANGES
         )
-        self._bobber_scanner = ThreadedTemplateScanner(
+
+        bobber_templates_scanner = ThreadedTemplateScanner if settings.THREADED_BOBBER_SCANNER else TemplateScanner
+        self._bobber_scanner = bobber_templates_scanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
             threshold=0.6
         )
@@ -122,11 +125,11 @@ class FisherBot(InfoInterface):
         )
         self._is_fish_checking_threshold_left = int(
             components_settings.REGIONS.CATCHING_BAR.left
-            + components_settings.REGIONS.CATCHING_BAR.width * 0.4
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.35
         )
         self._is_fish_checking_threshold_right = int(
             components_settings.REGIONS.CATCHING_BAR.left
-            + components_settings.REGIONS.CATCHING_BAR.width * 0.7
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.65
         )
 
     def _init_catching_scanners(self) -> None:
@@ -211,6 +214,9 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _should_relocate(self) -> bool:
+        if self.current_location == '':
+            return False
+
         if self._skipped_in_row % 2 == 0 and self._skipped_in_row != 0:
             return True
 
@@ -243,32 +249,37 @@ class FisherBot(InfoInterface):
         return condition
 
     def _find_bobber_region_with_timeout(self, timeout: float | None = None) -> Region | None:
-        st: float = time.time()
+        st: float = time.monotonic()
 
         while True:
-            for coordinate in self._bobber_scanner(
-                as_custom_region=self._get_bobber_corner()
-            ).iterate_all_by_first_founded():
+            for coordinate in self._bobber_scanner(as_custom_region=self._get_bobber_corner()).iterate_all_by_first_founded():
                 if coordinate:
                     return coordinate.region
 
-            if timeout is not None and time.time() - st > timeout:
+            if timeout is not None and time.monotonic() - st > timeout:
                 return
+
+            time.sleep(0.15)
 
     def _find_bobber_region(self) -> Region:
         return self._find_bobber_region_with_timeout()  # type: ignore
 
     def _catch_when_fish_awaiting(self) -> None:
         CommonIOController.press_mouse_button_and_release(
-            settings.THROW_DELAYS[random.randint(
-                0, len(settings.THROW_DELAYS) - 1
-            )]
+            settings.THROW_DELAYS[random.randint(0, len(settings.THROW_DELAYS) - 1)]
         )
         time.sleep(1)
 
-        bobber_region = self._find_bobber_region()
+        bobber_region = self._find_bobber_region_with_timeout(
+            timeout=settings.BOBBER_REGION_TIMEOUT_FINDING
+        )
+        if bobber_region is None:
+            raise FishAwaitingError(
+                f'CANNOT FIND BOBBER REGION FOR "{settings.BOBBER_REGION_TIMEOUT_FINDING}" SECONDS'
+            )
+
         bobber_offset = self._calc_bobber_offset(bobber_region)
-        last_offset_calc_time: float = time.time()
+        last_offset_calc_time: float = time.monotonic()
 
         while True:
             if self._need_to_catch(bobber_region, bobber_offset):
@@ -276,25 +287,19 @@ class FisherBot(InfoInterface):
                 break
 
             if bobber_offset == 0:
-                if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
-                    self._catching_errors += 1
-                    FISHER_BOT_LOGGER.warning(
-                        f'BOBBER OFFSET EQUALS 0 FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
-                    )
-                    break
+                if time.monotonic() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                    raise FishAwaitingError(f'BOBBER OFFSET EQUALS 0 FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS')
 
                 if new_bobber_region := self._find_bobber_region_with_timeout(timeout=5):
                     bobber_offset = self._calc_bobber_offset(new_bobber_region)
                 else:
-                    self._catching_errors += 1
-                    FISHER_BOT_LOGGER.warning(
+                    raise FishAwaitingError(
                         'BOBBER OFFSET EQUALS 0 AND BOBBER REGION CANNOT BE DEFINED '
                         f'FOR "{settings.RECALC_BOBBER_OFFSET_TIMEOUT}" SECONDS'
                     )
-                    break
 
-            if time.time() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
-                last_offset_calc_time = time.time()
+            if time.monotonic() - last_offset_calc_time > settings.RECALC_BOBBER_OFFSET_TIMEOUT:
+                last_offset_calc_time = time.monotonic()
                 bobber_offset = self._calc_bobber_offset(bobber_region, in_cycle=False)
                 FISHER_BOT_LOGGER.info(f'NEW BOBBER OFFSET => "{bobber_offset}"')
 
@@ -317,8 +322,10 @@ class FisherBot(InfoInterface):
         FISHER_BOT_LOGGER.info('CHECKING IF ACTUALLY FISH CATCHING')
 
         FISHER_BOT_LOGGER.info('REACHING LEFT BORDER')
+        st: float = time.monotonic()
         while True:
             if coord := self._catching_bobber_scanner.indentify_by_first():
+                st = time.monotonic()
                 bobber_position = coord.x - coord.region.width // 2
                 FISHER_BOT_LOGGER.debug(
                     f'BOBBER POSITION = "{bobber_position}"\n\t'
@@ -328,12 +335,16 @@ class FisherBot(InfoInterface):
                     FISHER_BOT_LOGGER.info('REACHED LEFT BORDER')
                     CommonIOController.press_mouse_left_button()
                     break
+            elif time.monotonic() - st >= settings.REAL_FISH_BOBBER_FINDING_TIMEOUT:
+                raise IsActuallyFishCatchingError('CANNOT FIND BOBBER OF CATCHING BAR WHEN REACHING LEFT BORDER')
 
             time.sleep(0.1)
 
         FISHER_BOT_LOGGER.info('REACHING RIGHT BORDER')
+        st: float = time.monotonic()
         while True:
             if coord := self._catching_bobber_scanner.indentify_by_first():
+                st = time.monotonic()
                 bobber_position = coord.x - coord.region.width // 2
                 FISHER_BOT_LOGGER.debug(
                     f'BOBBER POSITION = "{bobber_position}"\n\t'
@@ -343,25 +354,23 @@ class FisherBot(InfoInterface):
                     FISHER_BOT_LOGGER.info('REACHED RIGHT BORDER')
                     CommonIOController.release_mouse_left_button()
                     break
+            elif time.monotonic() - st >= settings.REAL_FISH_BOBBER_FINDING_TIMEOUT:
+                raise IsActuallyFishCatchingError('CANNOT FIND BOBBER OF CATCHING BAR WHEN REACHING RIGHT BORDER')
 
             time.sleep(0.1)
-        time.sleep(0.2)
+        time.sleep(0.3)
 
         FISHER_BOT_LOGGER.info('CHECKING FOR ACTUALLY FISH')
 
         last_fish_distance_pos = self._fish_catching_distance_scanner.indentify_by_first()
         if last_fish_distance_pos is None:
-            FISHER_BOT_LOGGER.warning(
-                'CANNOT FIND "last_fish_distance_pos" ...'
-            )
-            self._catching_errors += 1
-            return False
+            raise IsActuallyFishCatchingError('CANNOT FIND FISH PROGRESSION OF DISTANCE BAR ON CATCHING BAR')
 
         last_fish_distance_pos = (
             last_fish_distance_pos.x - last_fish_distance_pos.region.width // 2
         )
 
-        for _ in range(10):
+        for _ in range(5):
             if coord := self._fish_catching_distance_scanner.indentify_by_first():
                 fish_distance_position = coord.x - coord.region.width // 2
                 FISHER_BOT_LOGGER.debug(
@@ -372,32 +381,10 @@ class FisherBot(InfoInterface):
                     FISHER_BOT_LOGGER.info('FISH RECOGNIZED')
                     return True
 
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         FISHER_BOT_LOGGER.info('LOOKS LIKE NOT FISH. SKIPPING')
         return False
-
-    def _prepare_for_catching(self) -> bool:
-
-        FISHER_BOT_LOGGER.info('PREPARE FOR CATCHING')
-
-        for _ in range(10):
-            if self._catching_bobber_scanner.indentify_by_first():
-                if self._check_if_actually_fish_catching():
-                    return True
-
-                self._cancel_any_action()
-                self._skipped_non_fishes += 1
-                self._skipped_in_row += 1
-
-                return False
-
-            time.sleep(0.1)
-        else:
-            FISHER_BOT_LOGGER.warning(
-                'CANNOT FIND BOBBER ON CATCHING BAR WHEN PREPARING FOR CATCHING'
-            )
-            return False
 
     def _catch_fish(self) -> bool:
 
@@ -450,7 +437,7 @@ class FisherBot(InfoInterface):
                 CommonIOController.release_mouse_left_button()
                 break
 
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         return fish_is_catched
 
@@ -458,20 +445,25 @@ class FisherBot(InfoInterface):
         CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
         time.sleep(settings.SIT_TO_ANIMAL_TIMEOUT)
 
-    def _prepare_to_catching_when_relocated(self) -> None:
+    def _prepare_to_catching_when_relocated(self, location: Location) -> None:
         CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+        self.set_new_catching_region(location.catching_region)
 
-    def _relocate_to_next_location(self) -> None:
-        new_location_key = self._rotations.define_new_location_for_relocating()
-        location = self._rotations.get_location_data(new_location_key)
+    def relocate_to_next_location(self) -> None:
+        if self.current_location == '':
+            FISHER_BOT_LOGGER.debug(
+                'CANNOT RELOCATE COUSE LOOK LIKE RELOCATION RECORDS WAS NOT FOUNDED OR DOES NOT EXISTED'
+            )
+            return
 
         self.change_status(Status.RELOCATING)
 
+        new_location_key = self._rotations.define_new_location_for_relocating()
+        location = self._rotations.get_location_data(new_location_key)
+
         self._prepare_to_relocate()
         self._rotations.resolve_path(location)
-        self._prepare_to_catching_when_relocated()
-
-        self.set_new_catching_region(location.catching_region)
+        self._prepare_to_catching_when_relocated(location)
 
         self.change_status(Status.CATCHING)
         self._rotations.current_location = location.key
@@ -483,26 +475,34 @@ class FisherBot(InfoInterface):
             self._save_last_snapshot()
 
             if self._should_relocate():
-                if self.current_location != '':
-                    self._relocate_to_next_location()
+                self.relocate_to_next_location()
 
             self._events_loop()
             self._buffs_controller.check_and_activate_buffs()
             self._select_new_mouse_position_for_fishing()
-            self._catch_when_fish_awaiting()
 
-            need_to_catch_fish = self._prepare_for_catching()
-            if need_to_catch_fish:
-                self._skipped_in_row = 0
-                fish_is_catched = self._catch_fish()
+            sleep_time: float = 0
 
-            sleep_time = self._define_sleep_value(fish_is_catched)
+            try:
+                self._catch_when_fish_awaiting()
+                need_to_catch: bool = self._check_if_actually_fish_catching()
+            except (FishAwaitingError, IsActuallyFishCatchingError) as exception:
+                FISHER_BOT_LOGGER.warning(exception)
+                self._catching_errors += 1
+                self._cancel_any_action()
+            else:
+                if need_to_catch:
+                    fish_is_catched = self._catch_fish()
+                    if fish_is_catched:
+                        self._skipped_in_row = 0
+                        sleep_time = self._define_sleep_value(fish_is_catched)
+                else:
+                    self._skipped_non_fishes += 1
+                    self._skipped_in_row += 1
+                    self._cancel_any_action()
 
             FISHER_BOT_LOGGER.info(
                 f'WAITING "{sleep_time}" SECONDS BEFORE NEW CATCHING'
-            )
-            FISHER_BOT_LOGGER.debug(
-                f'NEED_TO_CATCH_FISH => {need_to_catch_fish}, FISH_IS_CATCHED => {fish_is_catched}'
             )
             time.sleep(sleep_time)
 
