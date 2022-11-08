@@ -52,4 +52,7 @@ class EventsLoop:
                     mouse_listener.stop()
                 break
 
+            elif self._bot_instance.status is Status.RELOCATE:
+                self._bot_instance.relocate_to_next_location()
+
             time.sleep(0.5)

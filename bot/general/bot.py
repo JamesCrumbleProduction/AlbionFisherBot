@@ -5,10 +5,10 @@ import random
 from typing import Iterator
 
 from .settings import settings
-from .components.schemas import Status
 from .components.rotations import Rotations
 from .services.logger import FISHER_BOT_LOGGER
 from .components.events_loop import EventsLoop
+from .components.schemas import Status, Location
 from .components.info_interface import InfoInterface
 from .components.paths import LAST_LOCATION_FILE_PATH
 from .components.io_controllers import CommonIOController
@@ -211,6 +211,9 @@ class FisherBot(InfoInterface):
         return settings.NEW_FISH_CATCHING_AWAITING
 
     def _should_relocate(self) -> bool:
+        if self.current_location == '':
+            return False
+
         if self._skipped_in_row % 2 == 0 and self._skipped_in_row != 0:
             return True
 
@@ -423,7 +426,7 @@ class FisherBot(InfoInterface):
 
                 if need_to_release:
                     CommonIOController.release_mouse_left_button()
-                    time.sleep(0.09)
+                    time.sleep(0.1)
                     CommonIOController.press_mouse_left_button()
                 else:
                     CommonIOController.press_mouse_left_button()
@@ -458,20 +461,25 @@ class FisherBot(InfoInterface):
         CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
         time.sleep(settings.SIT_TO_ANIMAL_TIMEOUT)
 
-    def _prepare_to_catching_when_relocated(self) -> None:
+    def _prepare_to_catching_when_relocated(self, location: Location) -> None:
         CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+        self.set_new_catching_region(location.catching_region)
 
-    def _relocate_to_next_location(self) -> None:
-        new_location_key = self._rotations.define_new_location_for_relocating()
-        location = self._rotations.get_location_data(new_location_key)
+    def relocate_to_next_location(self) -> None:
+        if self.current_location == '':
+            FISHER_BOT_LOGGER.debug(
+                'CANNOT RELOCATE COUSE LOOK LIKE RELOCATION RECORDS WAS NOT FOUNDED OR DOES NOT EXISTED'
+            )
+            return
 
         self.change_status(Status.RELOCATING)
 
+        new_location_key = self._rotations.define_new_location_for_relocating()
+        location = self._rotations.get_location_data(new_location_key)
+
         self._prepare_to_relocate()
         self._rotations.resolve_path(location)
-        self._prepare_to_catching_when_relocated()
-
-        self.set_new_catching_region(location.catching_region)
+        self._prepare_to_catching_when_relocated(location)
 
         self.change_status(Status.CATCHING)
         self._rotations.current_location = location.key
@@ -483,8 +491,7 @@ class FisherBot(InfoInterface):
             self._save_last_snapshot()
 
             if self._should_relocate():
-                if self.current_location != '':
-                    self._relocate_to_next_location()
+                self.relocate_to_next_location()
 
             self._events_loop()
             self._buffs_controller.check_and_activate_buffs()

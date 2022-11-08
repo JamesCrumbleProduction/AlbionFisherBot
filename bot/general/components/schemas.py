@@ -12,6 +12,7 @@ class Status(Enum):
     PAUSED: str = 'PAUSED'  # type: ignore
     PAUSING: str = 'PAUSING'  # type: ignore
     CATCHING: str = 'CATCHING'  # type: ignore
+    RELOCATE: str = 'RELOCATE'  # type: ignore
     RELOCATING: str = 'RELOCATING'  # type: ignore
 
 
