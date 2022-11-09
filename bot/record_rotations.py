@@ -28,6 +28,7 @@ path literal (char 2) catching mouse area (char 2) record elements ([int, int, f
 '''
 
 ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
+LOCATIONS_SNAPSHOTS_PATH: str = os.path.join(ROOT_PATH, 'locations_snapshots')
 
 LOCATION_KEYS: str = string.ascii_uppercase
 
@@ -65,6 +66,8 @@ class RotationsRecorder:
         self._is_recording: bool = False
         self._record_buffer: list[tuple[int, int, float] | tuple[int, int, float, int]] = list()
         self._catching_region_buffer: list[tuple[int, int]] = list()
+        self.create_snapshots_folder_if_not_exists()
+        self.clear_snapshots_folder()
 
     @property
     def start_location_was_inited(self) -> bool:
@@ -198,9 +201,18 @@ class RotationsRecorder:
 
         self._clear_buffers()
 
+    def clear_snapshots_folder(self) -> None:
+        for element in os.listdir(LOCATIONS_SNAPSHOTS_PATH):
+            element_path: str = os.path.join(LOCATIONS_SNAPSHOTS_PATH, element)
+
+            if os.path.isfile(element_path):
+                os.remove(element_path)
+
+    def create_snapshots_folder_if_not_exists(self) -> None:
+        if not os.path.exists(LOCATIONS_SNAPSHOTS_PATH):
+            os.mkdir(LOCATIONS_SNAPSHOTS_PATH)
+
     def save_location_snapshot(self, location_key: str) -> None:
-        if not os.path.exists(os.path.join(ROOT_PATH, 'locations_snapshots')):
-            os.mkdir(os.path.join(ROOT_PATH, 'locations_snapshots'))
 
         with mss() as base:
             with open(os.path.join(ROOT_PATH, 'locations_snapshots', f'snapshot of {location_key} location.png'), 'wb') as handle:
