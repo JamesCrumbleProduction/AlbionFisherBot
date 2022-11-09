@@ -125,7 +125,7 @@ class FisherBot(InfoInterface):
         )
         self._is_fish_checking_threshold_left = int(
             components_settings.REGIONS.CATCHING_BAR.left
-            + components_settings.REGIONS.CATCHING_BAR.width * 0.35
+            + components_settings.REGIONS.CATCHING_BAR.width * 0.4
         )
         self._is_fish_checking_threshold_right = int(
             components_settings.REGIONS.CATCHING_BAR.left
