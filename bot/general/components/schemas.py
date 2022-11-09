@@ -19,7 +19,7 @@ class Status(Enum):
 class Location(BaseModel):
 
     key: str
-    record: list[tuple[int, int, float]]
+    record: list[tuple[int, int, float] | tuple[int, int, float, int]]
     catching_region: Region
 
 

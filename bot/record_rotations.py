@@ -46,12 +46,12 @@ class Location(BaseModel):
 
     # record how to reach this location
     # x, y, time interval
-    record: list[tuple[int, int, float]] = None  # type: ignore
+    record: list[tuple[int, int, float] | tuple[int, int, float, int]] = None  # type: ignore
 
     # catching area of this location
     catching_region: list[tuple[int, int]]  # x, y
 
-    def init_record(self, record: list[tuple[int, int, float]]) -> None:
+    def init_record(self, record: list[tuple[int, int, float] | tuple[int, int, float, int]]) -> None:
         if self.record is None:
             self.record = record
 
@@ -63,7 +63,7 @@ class RotationsRecorder:
         self._cycle_was_closed: bool = False
         self._locations: list[Location] = list()
         self._is_recording: bool = False
-        self._record_buffer: list[tuple[int, int, float]] = list()
+        self._record_buffer: list[tuple[int, int, float] | tuple[int, int, float, int]] = list()
         self._catching_region_buffer: list[tuple[int, int]] = list()
 
     @property
@@ -80,8 +80,8 @@ class RotationsRecorder:
 
     def _mouse_on_move(self, x: int, y: int) -> None:
         if self._is_recording:
-            if time.time() - self._record_buffer[-1][2] > 0.02:
-                self._record_buffer.append((x, y, time.time()))
+            if time.monotonic() - self._record_buffer[-1][2] > 0.02:
+                self._record_buffer.append((x, y, time.monotonic()))
 
     def _mouse_on_click(self, x: int, y: int, button: Button, is_pressed: bool) -> None:
         if button is Button.middle:
@@ -100,7 +100,7 @@ class RotationsRecorder:
 
         elif button is Button.left:
             self._is_recording = is_pressed
-            self._record_buffer.append((x, y, time.time()))
+            self._record_buffer.append((x, y, time.monotonic(), int(is_pressed)))
 
     def record_start_location_data(self) -> None:
         if len(self._locations) != 0:

@@ -1,3 +1,4 @@
+import os
 import time
 import orjson
 import keyboard
@@ -7,6 +8,7 @@ from pynput.mouse import Listener, Controller, Button
 
 
 MOUSE = Controller()
+ROOT_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
 
 is_recording: bool = False
@@ -60,7 +62,7 @@ def record_path():
 
 
 def reproduce_path() -> None:
-    with open('rotations.json', 'rb') as handle:
+    with open(os.path.join(ROOT_PATH, 'rotations.json'), 'rb') as handle:
         locations: dict[str, dict[str, Any]] = orjson.loads(handle.read())
 
     locations_: list[str] = [
@@ -77,25 +79,30 @@ def reproduce_path() -> None:
 
             path_data = locations[location]
 
-            prev_time: float = 0
-            record = path_data['record']
+            record: list = path_data['record']
             catching_area = path_data['catching_region']
 
             time.sleep(5)
 
-            for i, moving in enumerate(record):
-                print(moving)
-                if i == 0:
-                    prev_time = moving[2]
-                    MOUSE.position = (moving[0], moving[1])
-                    MOUSE.press(Button.left)
-                    prev_time = moving[2]
-                    continue
-                else:
-                    MOUSE.position = (moving[0], moving[1])
+            x, y, prev_time, *_ = record[0]
+            prev_time: float
+            MOUSE.position = (x, y)
+            MOUSE.press(Button.left)
 
-                time.sleep(moving[2] - prev_time)
-                prev_time = moving[2]
+            for moving in record[1:]:
+                x, y, next_time, *is_pressed = moving
+                MOUSE.position = (x, y)
+
+                time.sleep(next_time - prev_time)
+
+                if len(is_pressed) != 0:
+                    print(moving, next_time - prev_time)
+                    if is_pressed[0] == 1:
+                        MOUSE.press(Button.left)
+                    elif is_pressed[0] == 0:
+                        MOUSE.release(Button.left)
+
+                prev_time = next_time
 
             MOUSE.release(Button.left)
             print(catching_area)
