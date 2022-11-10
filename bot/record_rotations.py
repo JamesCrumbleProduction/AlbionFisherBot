@@ -4,6 +4,7 @@ import orjson
 import string
 import keyboard
 
+from enum import Enum
 from mss import mss, tools
 from pydantic import BaseModel
 from pynput.mouse import Listener, Button
@@ -28,6 +29,7 @@ path literal (char 2) catching mouse area (char 2) record elements ([int, int, f
 '''
 
 ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
+LOCATIONS_SNAPSHOTS_PATH: str = os.path.join(ROOT_PATH, 'locations_snapshots')
 
 LOCATION_KEYS: str = string.ascii_uppercase
 
@@ -40,18 +42,23 @@ HELP: str = f'''HELP INFO:
 '''
 
 
+class RecordingState(Enum):
+
+    CATCHING_ROTATIONS: str = 'CATCHING_ROTATIONS'  # type: ignore
+
+
 class Location(BaseModel):
 
     key: str
 
     # record how to reach this location
     # x, y, time interval
-    record: list[tuple[int, int, float]] = None  # type: ignore
+    record: list[tuple[int, int, float] | tuple[int, int, float, int]] = None  # type: ignore
 
     # catching area of this location
     catching_region: list[tuple[int, int]]  # x, y
 
-    def init_record(self, record: list[tuple[int, int, float]]) -> None:
+    def init_record(self, record: list[tuple[int, int, float] | tuple[int, int, float, int]]) -> None:
         if self.record is None:
             self.record = record
 
@@ -63,8 +70,10 @@ class RotationsRecorder:
         self._cycle_was_closed: bool = False
         self._locations: list[Location] = list()
         self._is_recording: bool = False
-        self._record_buffer: list[tuple[int, int, float]] = list()
+        self._record_buffer: list[tuple[int, int, float] | tuple[int, int, float, int]] = list()
         self._catching_region_buffer: list[tuple[int, int]] = list()
+        self.create_snapshots_folder_if_not_exists()
+        self.clear_snapshots_folder()
 
     @property
     def start_location_was_inited(self) -> bool:
@@ -80,8 +89,8 @@ class RotationsRecorder:
 
     def _mouse_on_move(self, x: int, y: int) -> None:
         if self._is_recording:
-            if time.time() - self._record_buffer[-1][2] > 0.02:
-                self._record_buffer.append((x, y, time.time()))
+            if time.monotonic() - self._record_buffer[-1][2] > 0.02:
+                self._record_buffer.append((x, y, time.monotonic()))
 
     def _mouse_on_click(self, x: int, y: int, button: Button, is_pressed: bool) -> None:
         if button is Button.middle:
@@ -100,7 +109,7 @@ class RotationsRecorder:
 
         elif button is Button.left:
             self._is_recording = is_pressed
-            self._record_buffer.append((x, y, time.time()))
+            self._record_buffer.append((x, y, time.monotonic(), int(is_pressed)))
 
     def record_start_location_data(self) -> None:
         if len(self._locations) != 0:
@@ -198,9 +207,18 @@ class RotationsRecorder:
 
         self._clear_buffers()
 
+    def clear_snapshots_folder(self) -> None:
+        for element in os.listdir(LOCATIONS_SNAPSHOTS_PATH):
+            element_path: str = os.path.join(LOCATIONS_SNAPSHOTS_PATH, element)
+
+            if os.path.isfile(element_path):
+                os.remove(element_path)
+
+    def create_snapshots_folder_if_not_exists(self) -> None:
+        if not os.path.exists(LOCATIONS_SNAPSHOTS_PATH):
+            os.mkdir(LOCATIONS_SNAPSHOTS_PATH)
+
     def save_location_snapshot(self, location_key: str) -> None:
-        if not os.path.exists(os.path.join(ROOT_PATH, 'locations_snapshots')):
-            os.mkdir(os.path.join(ROOT_PATH, 'locations_snapshots'))
 
         with mss() as base:
             with open(os.path.join(ROOT_PATH, 'locations_snapshots', f'snapshot of {location_key} location.png'), 'wb') as handle:
@@ -224,7 +242,7 @@ class RotationsRecorder:
         return True
 
 
-def main() -> int:
+def record_catching_rotations() -> None:
 
     sleep_seconds: int = 1
     recorder = RotationsRecorder()
@@ -241,8 +259,16 @@ def main() -> int:
 
     recorder.save()
 
+
+def main(recording_state: RecordingState) -> int:
+    match recording_state:
+        case RecordingState.CATCHING_ROTATIONS:
+            record_catching_rotations()
+        case _:
+            raise NotImplementedError('?????')
+
     return 0
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main(RecordingState.CATCHING_ROTATIONS))

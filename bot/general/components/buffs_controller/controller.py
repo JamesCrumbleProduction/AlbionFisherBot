@@ -55,7 +55,10 @@ class BuffsController:
                 x=settings.REGIONS.INVENTORY.left + random.randint(3, 10),
                 y=settings.REGIONS.INVENTORY.top + random.randint(3, 10)
             ))
-            CommonIOController.scroll(1, ScrollDirection.DOWN)
+
+            # 3 steps will be fine for game within 30 fps course inventory scroll depend on it
+            CommonIOController.scroll(3, ScrollDirection.DOWN)
+
             CommonIOController.move(monitor_center_)
             time.sleep(1.5)
 
