@@ -4,6 +4,7 @@ import orjson
 import string
 import keyboard
 
+from enum import Enum
 from mss import mss, tools
 from pydantic import BaseModel
 from pynput.mouse import Listener, Button
@@ -39,6 +40,11 @@ HELP: str = f'''HELP INFO:
     FOR STOP RECORDING PATH TO LOCATION TYPE "{STOP_RECORDING_BUTTON}" BUTTON
     FOR CHANGE RECORD TO CLOSING CYCLE LOCATION TYPE "{SWITCH_RECORD_TO_CLOSING_CYCLE_BUTTON}" BUTTON
 '''
+
+
+class RecordingState(Enum):
+
+    CATCHING_ROTATIONS: str = 'CATCHING_ROTATIONS'  # type: ignore
 
 
 class Location(BaseModel):
@@ -236,7 +242,7 @@ class RotationsRecorder:
         return True
 
 
-def main() -> int:
+def record_catching_rotations() -> None:
 
     sleep_seconds: int = 1
     recorder = RotationsRecorder()
@@ -253,8 +259,16 @@ def main() -> int:
 
     recorder.save()
 
+
+def main(recording_state: RecordingState) -> int:
+    match recording_state:
+        case RecordingState.CATCHING_ROTATIONS:
+            record_catching_rotations()
+        case _:
+            raise NotImplementedError('?????')
+
     return 0
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main(RecordingState.CATCHING_ROTATIONS))
