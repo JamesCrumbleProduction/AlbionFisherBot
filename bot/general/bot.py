@@ -149,7 +149,7 @@ class FisherBot(InfoInterface):
         FISHER_BOT_LOGGER.debug('INITING BUFFS CONTROLLER')
 
         bait_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('bait')
-        eat_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('eat')
+        eat_buff = FISHER_BOT_COMPILED_TEMPLATES.buffs.get('pie_eat')
 
         self._buffs_controller = BuffsController(
             Buff(
