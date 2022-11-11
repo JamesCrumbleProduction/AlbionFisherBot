@@ -39,7 +39,7 @@ class Panel:
                 status: str = machine_info["status"]
                 current_location: str = (
                     machine_info["current_location"]
-                    if machine_info["current_location"] != '' else 'WITHOUT ROTATIONS'
+                    if machine_info["current_location"] != '""' else 'WITHOUT ROTATIONS'
                 )
                 catched_fishes: int = machine_info['bot_info']['catched_fishes']
                 catching_errors: int = machine_info['bot_info']['catching_errors']
