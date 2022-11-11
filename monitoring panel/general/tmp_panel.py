@@ -29,15 +29,32 @@ class Panel:
         text_buffer: str = ''
 
         for vm_name, machine_info in self._machines_info.items():
-            current_location = machine_info["current_location"] if machine_info["current_location"] != '' else 'WITHOUT ROTATIONS'
-            text_buffer += f'{vm_name} -> in "{current_location}" location with "{machine_info["status"]}" status\n'  # noqa
-            text_buffer += f'{" " * len(vm_name)}    ' + f'{" " * len(vm_name)}    '.join([
-                f"catched_fishes -> {machine_info['bot_info']['catched_fishes']}",
-                f"catching_errors -> {machine_info['bot_info']['catching_errors']}",
-                f"skipped_non_fishes -> {machine_info['bot_info']['skipped_non_fishes']}",
-                f"skipped_non_fishes -> {machine_info['bot_info']['skipped_non_fishes']}",
-            ])
-            text_buffer += '\n'
+
+            try:
+                vm_name: str = vm_name
+                status: str = machine_info["status"]
+                current_location: str = (
+                    machine_info["current_location"]
+                    if machine_info["current_location"] != '' else 'WITHOUT ROTATIONS'
+                )
+                catched_fishes: int = machine_info['bot_info']['catched_fishes']
+                catching_errors: int = machine_info['bot_info']['catching_errors']
+                skipped_non_fishes: int = machine_info['bot_info']['skipped_non_fishes']
+                skipped_in_row: int = machine_info['bot_info']['skipped_in_row']
+                buffs: list[dict] = machine_info['bot_info']['buffs']
+
+            except Exception as exception:
+                print(f'EXCEPTION WHEN PARSING "{vm_name}" VM INFO => {exception}')
+            else:
+                text_buffer += f'''
+                    {vm_name}: ("{status}")
+                        location -> "{current_location}"
+                        catched_fishes -> {catched_fishes}
+                        catching_errors -> {catching_errors}
+                        skipped_non_fishes -> {skipped_non_fishes}
+                        skipped_non_fishes -> {skipped_in_row}
+                '''
+                text_buffer += '\n'
 
         return text_buffer
 
