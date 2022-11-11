@@ -8,7 +8,7 @@ from ....schemas import Image, Region, HSVRegion
 from ....image_grabber import grab_screen, validate_region
 
 
-class HSVBobberScanner:
+class HSVScanner:
 
     __slots__ = (
         'region',
@@ -20,16 +20,16 @@ class HSVBobberScanner:
 
     def __init__(
         self,
-        hsv_ranges: list[HSVRegion],
+        hsv_ranges: list[HSVRegion] | HSVRegion,
         region: Region | None = None,
     ) -> None:
         self.region = validate_region(region)
 
         self._image: Image
-        self._hsv_ranges = hsv_ranges
+        self._hsv_ranges: list[HSVRegion] = hsv_ranges if type(hsv_ranges) is list else [hsv_ranges]  # type: ignore
         self._source_kwargs = dict()
 
-    def __call__(self, /, as_custom_region: Region | None = None, as_custom_image: np.ndarray | None = None) -> HSVBobberScanner:
+    def __call__(self, /, as_custom_region: Region | None = None, as_custom_image: np.ndarray | None = None) -> HSVScanner:
         if as_custom_region is not None:
             self._source_kwargs['as_custom_region'] = as_custom_region
         if as_custom_image is not None:

@@ -1,10 +1,11 @@
 import time
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from pynput.mouse import Listener, Button
 
 from .schemas import Status
 from .world_to_screen import Region
+from ..services.logger import COMPONENTS_LOGGER
 
 if TYPE_CHECKING:
     from ..bot import FisherBot
@@ -14,11 +15,13 @@ class EventsLoop:
 
     __slots__ = (
         '_bot_instance',
+        '_additional_events',
         '_new_first_catching_coord',
     )
 
     def __init__(self, bot_instance: 'FisherBot'):
         self._bot_instance = bot_instance
+        self._additional_events: dict[str, Callable] = dict()
         self._new_first_catching_coord: tuple[int, int] | None = None
 
     def _new_catching_region_definer(self, x: int, y: int, button: Button, is_pressed: bool) -> None:
@@ -55,4 +58,12 @@ class EventsLoop:
             elif self._bot_instance.status is Status.RELOCATE:
                 self._bot_instance.relocate_to_next_location()
 
+            for event_name, event in self._additional_events.items():
+                COMPONENTS_LOGGER.info(f'STARTING ADDITIONAL "{event_name}" EVENT')
+                event()
+
             time.sleep(0.5)
+
+    def add_event(self, event_name: str, event: Callable) -> None:
+        if event_name not in self._additional_events:
+            self._additional_events[event_name] = event

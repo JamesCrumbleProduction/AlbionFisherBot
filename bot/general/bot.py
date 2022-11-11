@@ -19,11 +19,11 @@ from .components.exceptions import FishAwaitingError, IsActuallyFishCatchingErro
 from .components.buffs_controller import Buff, BuffConfig, BuffInfo, BuffsController
 from .components.world_to_screen import (
     Region,
+    HSVScanner,
     Coordinate,
     ScreenPart,
     monitor_center,
     TemplateScanner,
-    HSVBobberScanner,
     get_screen_part_region,
     ThreadedTemplateScanner,
 )
@@ -40,6 +40,7 @@ class FisherBot(InfoInterface):
         '_buffs_controller',
         '_hsv_bobber_scanner',
         '_is_machine_registered',
+        '_inventory_load_scanner',
         '_catching_bobber_scanner',
         '_fish_catching_distance_scanner',
         '_fish_distance_catched_threshold',
@@ -56,6 +57,12 @@ class FisherBot(InfoInterface):
 
         self._rotations: Rotations = Rotations()
         self._events_loop: EventsLoop = EventsLoop(self)
+        self._events_loop.add_event('INVENTORY LOADED CHECK', self._inventory_loaded_check_event)
+
+        self._inventory_load_scanner: HSVScanner = HSVScanner(
+            hsv_ranges=components_settings.HSV_CONFIGS.INVETORY_LOAD,
+            region=components_settings.REGIONS.INVENTORY_LOAD
+        )
 
         self._catching_region: Region | None = self._init_catching_region()
 
@@ -72,6 +79,19 @@ class FisherBot(InfoInterface):
     def current_location(self) -> str:
         return self._rotations.current_location
 
+    def _is_inventory_loaded(self) -> bool:
+        return not bool(self._inventory_load_scanner.count_nonzero_mask())
+
+    def _inventory_loaded_check_event(self) -> None:
+        if self._is_inventory_loaded():
+            self.change_status(Status.INVENTORY_LOADED)
+            while True:
+
+                if self._status is Status.CATCHING:
+                    break
+
+                time.sleep(2)
+
     def set_new_catching_region(self, new_region: Region) -> None:
         self._catching_region = new_region
         FISHER_BOT_LOGGER.info(
@@ -81,6 +101,10 @@ class FisherBot(InfoInterface):
     def change_status(self, status: Status, call_from_server: bool = False) -> None:
         if self._status is Status.RELOCATING and call_from_server:
             FISHER_BOT_LOGGER.info('CANNOT CHANGE STATUS COUSE BOT IS RELOCATING')
+            return
+
+        if status is Status.INVENTORY_LOADED and call_from_server:
+            FISHER_BOT_LOGGER.info(f'CANNOT CHANGE TO "{status}" STATUS FROM SERVER')
             return
 
         if status is Status.CATCHING and self._catching_region is None:
@@ -107,7 +131,7 @@ class FisherBot(InfoInterface):
 
     def _init_bobber_scanners(self) -> None:
         FISHER_BOT_LOGGER.debug('INITING BOBBER SCANNERS')
-        self._hsv_bobber_scanner = HSVBobberScanner(
+        self._hsv_bobber_scanner = HSVScanner(
             components_settings.HSV_CONFIGS.BOBBER_RANGES
         )
 

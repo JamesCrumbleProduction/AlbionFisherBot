@@ -33,6 +33,14 @@ class HSVConfigs(BaseSettings):
             )
         )
     ]
+    INVETORY_LOAD: HSVRegion = HSVRegion(
+        lower_range=np.array(
+            [40, 208, 118], dtype=np.uint8, copy=False
+        ),
+        higher_range=np.array(
+            [47, 240, 210], dtype=np.uint8, copy=False
+        )
+    )
 
 
 class Regions(BaseSettings):
@@ -59,6 +67,12 @@ class Regions(BaseSettings):
         left=760,
         height=314,
         width=233
+    )
+    INVENTORY_LOAD: Region = Region(
+        top=30,
+        left=745,
+        height=10,
+        width=20
     )
 
 

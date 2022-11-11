@@ -1,3 +1,3 @@
-from .scanner import HSVBobberScanner
+from .scanner import HSVScanner
 
-__all__ = 'HSVBobberScanner',
+__all__ = 'HSVScanner',

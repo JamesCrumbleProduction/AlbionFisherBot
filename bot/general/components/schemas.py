@@ -14,6 +14,7 @@ class Status(Enum):
     CATCHING: str = 'CATCHING'  # type: ignore
     RELOCATE: str = 'RELOCATE'  # type: ignore
     RELOCATING: str = 'RELOCATING'  # type: ignore
+    INVENTORY_LOADED: str = 'INVENTORY_LOADED'  # type: ignore
 
 
 class Location(BaseModel):
