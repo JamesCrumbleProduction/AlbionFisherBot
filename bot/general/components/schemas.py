@@ -1,6 +1,7 @@
 import io
 
 from enum import Enum
+from typing import Callable
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 
@@ -22,6 +23,15 @@ class Location(BaseModel):
     key: str
     record: list[tuple[int, int, float] | tuple[int, int, float, int]]
     catching_region: Region
+
+
+class AdditionalEvent(BaseModel):
+
+    name: str
+    event: Callable
+    execute_on_statuses: list[Status] = [
+        status for status in Status
+    ]
 
 
 class LastSnapshot(StreamingResponse):

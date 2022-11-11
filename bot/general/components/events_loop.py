@@ -1,10 +1,10 @@
 import time
 
-from typing import TYPE_CHECKING, Callable
 from pynput.mouse import Listener, Button
+from typing import TYPE_CHECKING, Callable
 
-from .schemas import Status
 from .world_to_screen import Region
+from .schemas import Status, AdditionalEvent
 from ..services.logger import COMPONENTS_LOGGER
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ class EventsLoop:
 
     def __init__(self, bot_instance: 'FisherBot'):
         self._bot_instance = bot_instance
-        self._additional_events: dict[str, Callable] = dict()
+        self._additional_events: dict[str, AdditionalEvent] = dict()
         self._new_first_catching_coord: tuple[int, int] | None = None
 
     def _new_catching_region_definer(self, x: int, y: int, button: Button, is_pressed: bool) -> None:
@@ -59,11 +59,16 @@ class EventsLoop:
                 self._bot_instance.relocate_to_next_location()
 
             for event_name, event in self._additional_events.items():
-                COMPONENTS_LOGGER.info(f'STARTING ADDITIONAL "{event_name}" EVENT')
-                event()
+                if self._bot_instance.status in event.execute_on_statuses:
+                    COMPONENTS_LOGGER.info(f'STARTING ADDITIONAL "{event_name}" EVENT')
+                    event.event()
 
             time.sleep(0.5)
 
-    def add_event(self, event_name: str, event: Callable) -> None:
+    def add_event(self, *, event_name: str, event: Callable, execute_on_statuses: list[Status] | None = None) -> None:
         if event_name not in self._additional_events:
-            self._additional_events[event_name] = event
+            self._additional_events[event_name] = AdditionalEvent(
+                name=event_name,
+                event=event,
+                **{'execute_on_statuses': execute_on_statuses} if execute_on_statuses is not None else {}
+            )
