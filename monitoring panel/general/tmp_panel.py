@@ -13,9 +13,13 @@ class Panel:
     def __init__(self):
         self.is_running: bool = True
         self.window = tk.Tk()
-        self.window.geometry('600x600')
 
-        self.label = tk.Label(text='', background='gray')
+        self.width = 600
+        self.height = 600
+
+        self.window.geometry(f'{self.width}x{self.height}')
+
+        self.label = tk.Label(text='', background='gray', width=self.width, height=self.height)
         self.label.pack()
 
         self._machines: dict[str, str] = dict()
