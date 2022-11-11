@@ -50,18 +50,18 @@ class EventsLoop:
                 mouse_listener = Listener(on_click=self._new_catching_region_definer)
                 mouse_listener.start()
 
-            elif self._bot_instance.status is Status.CATCHING:
+            for event_name, event in self._additional_events.items():
+                if self._bot_instance.status in event.execute_on_statuses:
+                    COMPONENTS_LOGGER.info(f'STARTING ADDITIONAL "{event_name}" EVENT')
+                    event.event()
+
+            if self._bot_instance.status is Status.CATCHING:
                 if mouse_listener is not None:
                     mouse_listener.stop()
                 break
 
             elif self._bot_instance.status is Status.RELOCATE:
                 self._bot_instance.relocate_to_next_location()
-
-            for event_name, event in self._additional_events.items():
-                if self._bot_instance.status in event.execute_on_statuses:
-                    COMPONENTS_LOGGER.info(f'STARTING ADDITIONAL "{event_name}" EVENT')
-                    event.event()
 
             time.sleep(0.5)
 
