@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     REAL_FISH_BOBBER_FINDING_TIMEOUT: float = 2.0
     THREADED_BOBBER_SCANNER: bool = True
 
-    VM_NAME: str = ''
-    MONITORING_SERVER_HOST: str = ''
+    VM_NAME: str = 'TEST'
+    MONITORING_SERVER_HOST: str = '192.168.0.25'
     MONITORING_SERVER_PORT: int = 4040
 
     SERVER_PORT: int = 4000

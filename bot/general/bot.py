@@ -1,4 +1,5 @@
 import time
+import httpx
 import orjson
 import random
 
@@ -38,6 +39,7 @@ class FisherBot(InfoInterface):
         '_catching_region',
         '_buffs_controller',
         '_hsv_bobber_scanner',
+        '_is_machine_registered',
         '_catching_bobber_scanner',
         '_fish_catching_distance_scanner',
         '_fish_distance_catched_threshold',
@@ -50,6 +52,8 @@ class FisherBot(InfoInterface):
         super().__init__()
 
         self.is_running: bool = True
+        self._is_machine_registered: bool = False
+
         self._rotations: Rotations = Rotations()
         self._events_loop: EventsLoop = EventsLoop(self)
 
@@ -469,9 +473,31 @@ class FisherBot(InfoInterface):
         self._rotations.current_location = location.key
         time.sleep(0.5)
 
+    def _register_machine(self) -> None:
+        if self._is_machine_registered:
+            return
+
+        if settings.VM_NAME == '' or settings.MONITORING_SERVER_HOST == '':
+            FISHER_BOT_LOGGER.warning(
+                'CANNOT REGISTER MACHINE COUSE VM NAME OR MONITORING SERVER HOST IS NOT DEFINED'
+            )
+            return
+
+        try:
+            with httpx.Client() as client:
+                client.post(
+                    f'http://{settings.MONITORING_SERVER_HOST}:{settings.MONITORING_SERVER_PORT}/register_machine',
+                    params={'vm_name': settings.VM_NAME, 'port': settings.SERVER_PORT}, timeout=1
+                )
+        except Exception as exception:
+            FISHER_BOT_LOGGER.error(f'CANNOT REGISTER MACHINE ON MONITORING SERVER => {exception}')
+        else:
+            self._is_machine_registered = True
+
     def run(self) -> None:
         while True:
             fish_is_catched: bool = False
+            self._register_machine()
             self._save_last_snapshot()
 
             if self._should_relocate():
