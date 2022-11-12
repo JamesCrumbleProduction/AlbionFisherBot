@@ -283,11 +283,15 @@ class FisherBot(InfoInterface):
 
     def _find_bobber_region_with_timeout(self, timeout: float | None = None) -> Region | None:
         st: float = time.monotonic()
+        bobber_finding_attempts: int = 0
 
         while True:
             for coordinate in self._bobber_scanner(as_custom_region=self._get_bobber_corner()).iterate_all_by_first_founded():
                 if coordinate:
+                    FISHER_BOT_LOGGER.info(f'FOUND BOBBER REGION FROM "{bobber_finding_attempts}" TEMPLATE')
                     return coordinate.region
+
+                bobber_finding_attempts += 1
 
             if timeout is not None and time.monotonic() - st > timeout:
                 return
