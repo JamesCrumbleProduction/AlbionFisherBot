@@ -147,7 +147,7 @@ class Rotations:
     def resolve_path(self, location: Location) -> None:
         x, y, prev_time, *_ = location.record[0]
         CommonIOController.move(Coordinate(x=x, y=y))
-        CommonIOController.press_mouse_left_button()
+        CommonIOController.press_mouse_right_button()
 
         for moving in location.record[1:]:
             x, y, next_time, *is_pressed = moving
@@ -156,10 +156,10 @@ class Rotations:
 
             if len(is_pressed) != 0:
                 if is_pressed[0] == 1:
-                    CommonIOController.press_mouse_left_button()
+                    CommonIOController.press_mouse_right_button()
                 elif is_pressed[0] == 0:
-                    CommonIOController.release_mouse_left_button()
+                    CommonIOController.release_mouse_right_button()
 
             prev_time = next_time
 
-        CommonIOController.release_mouse_left_button()
+        CommonIOController.release_mouse_right_button()
