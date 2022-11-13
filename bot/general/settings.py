@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     BOBBER_CATCH_THRESHOLD: int = 30  # in percentage
     THREADED_BOBBER_SCANNER: bool = True
     RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds
-    BOBBER_OFFSET_CALCULATION_CYCLES: int = 10
+    BOBBER_OFFSET_CALCULATION_CYCLES: int = 5
     BOBBER_REGION_TIMEOUT_FINDING: float = 10.0
     REAL_FISH_BOBBER_FINDING_TIMEOUT: float = 2.0
 

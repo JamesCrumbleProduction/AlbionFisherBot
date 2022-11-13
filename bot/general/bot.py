@@ -60,7 +60,7 @@ class FisherBot(InfoInterface):
         self._events_loop.add_event(
             event_name='INVENTORY LOADED',
             event=self._inventory_loaded_event,
-            execute_on_statuses=[Status.CATCHING]
+            execute_on_statuses=[Status.CATCHING, Status.INVENTORY_LOADED]
         )
 
         self._inventory_load_scanner: HSVScanner = HSVScanner(
@@ -89,6 +89,8 @@ class FisherBot(InfoInterface):
     def _inventory_loaded_event(self) -> None:
         if self._is_inventory_loaded():
             self.change_status(Status.INVENTORY_LOADED)
+        elif self.status is Status.INVENTORY_LOADED:
+            self.change_status(Status.CATCHING)
 
     def set_new_catching_region(self, new_region: Region) -> None:
         self._catching_region = new_region
@@ -315,7 +317,7 @@ class FisherBot(InfoInterface):
                 f'CANNOT FIND BOBBER REGION FOR "{settings.BOBBER_REGION_TIMEOUT_FINDING}" SECONDS'
             )
 
-        bobber_offset = self._calc_bobber_offset(bobber_region)
+        bobber_offset = self._calc_bobber_offset(bobber_region, in_cycle=False)
         last_offset_calc_time: float = time.monotonic()
 
         while True:
@@ -452,6 +454,7 @@ class FisherBot(InfoInterface):
                 else:
                     CommonIOController.press_mouse_left_button()
             else:
+                CommonIOController.release_mouse_left_button()
 
                 FISHER_BOT_LOGGER.debug(
                     f'LAST FISH DISTANCE: {last_fish_distance_position} '
@@ -471,11 +474,11 @@ class FisherBot(InfoInterface):
                     )
                     self._catching_errors += 1
 
-                CommonIOController.release_mouse_left_button()
                 break
 
             time.sleep(0.1)
 
+        CommonIOController.release_mouse_left_button()
         return fish_is_catched
 
     def _prepare_to_relocate(self) -> None:
