@@ -88,11 +88,17 @@ class IOServiceSettings(BaseSettings):
     DRAW_STEPS: int = 60  # total times to update cursor
 
 
+class RotationsSettings(BaseSettings):
+
+    USE_LAST_LOCATION: bool = True
+
+
 class ComponentsSettings(BaseSettings):
 
     REGIONS: Regions = Regions()
     HSV_CONFIGS: HSVConfigs = HSVConfigs()
     IO_SERVICE: IOServiceSettings = IOServiceSettings()
+    ROTATIONS: RotationsSettings = RotationsSettings()
 
 
 settings = ComponentsSettings()

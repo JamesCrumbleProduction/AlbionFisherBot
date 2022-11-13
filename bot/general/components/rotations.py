@@ -7,10 +7,11 @@ import orjson
 from typing import Iterator
 
 from .schemas import Location
+from .settings import settings
 from .io_controllers import CommonIOController
 from .world_to_screen import Region, Coordinate
-from ..services.logger import COMPONENTS_LOGGER
 from .paths import ROTATIONS_FILE_PATH, LAST_LOCATION_FILE_PATH
+from ..services.logger import COMPONENTS_LOGGER
 
 
 class RotationsError(BaseException):
@@ -101,7 +102,7 @@ class Rotations:
         return os.path.exists(LAST_LOCATION_FILE_PATH) and os.path.isfile(LAST_LOCATION_FILE_PATH)
 
     def _define_current_location(self) -> str:
-        if self._is_last_location_exists():
+        if settings.ROTATIONS.USE_LAST_LOCATION and self._is_last_location_exists():
             with open(LAST_LOCATION_FILE_PATH, 'rb') as handle:
                 last_location: str = orjson.loads(handle.read())['last_location']
 
