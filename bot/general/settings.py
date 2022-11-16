@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     SIT_TO_ANIMAL_BUTTON: str = 'a'
     SIT_TO_ANIMAL_TIMEOUT: float = 4.0
 
-    BOBBER_CATCH_THRESHOLD: int = 30  # in percentage
+    BOBBER_CATCH_THRESHOLD: int = 35  # in percentage
     THREADED_BOBBER_SCANNER: bool = True
-    RECALC_BOBBER_OFFSET_TIMEOUT: float = 10.0  # in seconds
+    RECALC_BOBBER_OFFSET_TIMEOUT: float = 2.0  # in seconds
     BOBBER_OFFSET_CALCULATION_CYCLES: int = 5
     BOBBER_REGION_TIMEOUT_FINDING: float = 10.0
     REAL_FISH_BOBBER_FINDING_TIMEOUT: float = 2.0
