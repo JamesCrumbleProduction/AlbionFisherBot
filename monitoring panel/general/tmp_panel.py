@@ -56,7 +56,7 @@ class Panel:
                         catched_fishes -> {catched_fishes}
                         catching_errors -> {catching_errors}
                         skipped_non_fishes -> {skipped_non_fishes}
-                        skipped_non_fishes -> {skipped_in_row}
+                        skipped_in_a_row -> {skipped_in_row}
                 '''
                 text_buffer += '\n'
 
