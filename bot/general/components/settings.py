@@ -34,7 +34,7 @@ class HSVConfigs(BaseSettings):
         ),
         HSVRegion(
             lower_range=np.array(
-                [0, 169, 162], dtype=np.uint8, copy=False
+                [0, 169, 195], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
                 [179, 213, 238], dtype=np.uint8, copy=False
