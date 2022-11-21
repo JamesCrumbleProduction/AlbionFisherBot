@@ -21,7 +21,7 @@ class HSVConfigs(BaseSettings):
                 [134, 100, 170], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
-                [179, 154, 201], dtype=np.uint8, copy=False
+                [179, 154, 225], dtype=np.uint8, copy=False
             )
         ),
         HSVRegion(
@@ -32,12 +32,20 @@ class HSVConfigs(BaseSettings):
                 [179, 255, 255], dtype=np.uint8, copy=False
             )
         ),
+        # HSVRegion(
+        #     lower_range=np.array(
+        #         [0, 169, 195], dtype=np.uint8, copy=False
+        #     ),
+        #     higher_range=np.array(
+        #         [179, 213, 238], dtype=np.uint8, copy=False
+        #     )
+        # ),
         HSVRegion(
             lower_range=np.array(
-                [0, 169, 195], dtype=np.uint8, copy=False
+                [140, 137, 166], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
-                [179, 213, 238], dtype=np.uint8, copy=False
+                [179, 160, 232], dtype=np.uint8, copy=False
             )
         )
     ]
