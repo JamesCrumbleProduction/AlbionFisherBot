@@ -18,7 +18,7 @@ class HSVConfigs(BaseSettings):
         ),
         HSVRegion(
             lower_range=np.array(
-                [134, 100, 170], dtype=np.uint8, copy=False
+                [134, 125, 170], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
                 [179, 154, 225], dtype=np.uint8, copy=False
