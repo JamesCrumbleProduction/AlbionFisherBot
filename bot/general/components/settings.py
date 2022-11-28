@@ -26,20 +26,24 @@ class HSVConfigs(BaseSettings):
         ),
         HSVRegion(
             lower_range=np.array(
-                [125, 134, 230], dtype=np.uint8, copy=False
+                [
+                    125,
+                    134,
+                    190  # 230
+                ], dtype=np.uint8, copy=False
             ),
             higher_range=np.array(
                 [179, 255, 255], dtype=np.uint8, copy=False
             )
         ),
-        # HSVRegion(
-        #     lower_range=np.array(
-        #         [0, 169, 195], dtype=np.uint8, copy=False
-        #     ),
-        #     higher_range=np.array(
-        #         [179, 213, 238], dtype=np.uint8, copy=False
-        #     )
-        # ),
+        HSVRegion(
+            lower_range=np.array(
+                [115, 148, 158], dtype=np.uint8, copy=False
+            ),
+            higher_range=np.array(
+                [179, 194, 238], dtype=np.uint8, copy=False
+            )
+        ),
         HSVRegion(
             lower_range=np.array(
                 [140, 137, 166], dtype=np.uint8, copy=False
