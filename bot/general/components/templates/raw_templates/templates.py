@@ -81,6 +81,7 @@ class Paths:
         bobbers = os.path.join(__fisher_bot_templates, 'bobbers')
         status_bar_components = os.path.join(__fisher_bot_templates, 'status_bar_components')
         buffs = os.path.join(__fisher_bot_templates, 'buffs')
+        other = os.path.join(__fisher_bot_templates, 'other')
 
 
 @dataclass
@@ -90,4 +91,5 @@ class RawTemplates:
     class FisherBotRawTemplates:
         bobbers = templates_generator(Paths.FisherBotTemplates.bobbers)
         status_bar_components = templates_generator(Paths.FisherBotTemplates.status_bar_components)
+        other = templates_generator(Paths.FisherBotTemplates.other)
         buffs = buff_templates_iterator(Paths.FisherBotTemplates.buffs)

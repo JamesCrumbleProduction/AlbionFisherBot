@@ -39,6 +39,7 @@ class FisherBot(InfoInterface):
         '_catching_region',
         '_buffs_controller',
         '_hsv_bobber_scanner',
+        '_mouted_buff_scanner',
         '_is_machine_registered',
         '_inventory_load_scanner',
         '_catching_bobber_scanner',
@@ -70,9 +71,8 @@ class FisherBot(InfoInterface):
 
         self._catching_region: Region | None = self._init_catching_region()
 
-        self._init_bobber_scanners()
+        self._init_scanners()
         self._init_catching_thresholds()
-        self._init_catching_scanners()
         self._init_buffs_controller()
 
     @property
@@ -162,6 +162,15 @@ class FisherBot(InfoInterface):
         self._is_fish_checking_threshold_right = int(
             components_settings.REGIONS.CATCHING_BAR.left
             + components_settings.REGIONS.CATCHING_BAR.width * 0.65
+        )
+
+    def _init_scanners(self) -> None:
+        self._init_bobber_scanners()
+        self._init_catching_scanners()
+        self._mouted_buff_scanner: TemplateScanner = TemplateScanner(
+            FISHER_BOT_COMPILED_TEMPLATES.other.get('mounted_buff'),
+            region=components_settings.REGIONS.ACTIVE_BUFFS,
+            threshold=0.7
         )
 
     def _init_catching_scanners(self) -> None:
@@ -481,12 +490,27 @@ class FisherBot(InfoInterface):
         CommonIOController.release_mouse_left_button()
         return fish_is_catched
 
-    def _prepare_to_relocate(self) -> None:
+    def _sit_on_animal(self) -> None:
         CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
-        time.sleep(settings.SIT_TO_ANIMAL_TIMEOUT)
+
+        while True:
+            if self._mouted_buff_scanner.get_condition_by_one():
+                break
+            time.sleep(1)
+
+    def _get_down_of_animal(self) -> None:
+        CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+
+        while True:
+            if not self._mouted_buff_scanner.get_condition_by_one():
+                break
+            time.sleep(1)
+
+    def _prepare_to_relocate(self) -> None:
+        self._sit_on_animal()
 
     def _prepare_to_catching_when_relocated(self, location: Location) -> None:
-        CommonIOController.press(settings.SIT_TO_ANIMAL_BUTTON)
+        self._get_down_of_animal()
         self.set_new_catching_region(location.catching_region)
 
     def relocate_to_next_location(self) -> None:

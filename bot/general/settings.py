@@ -13,8 +13,6 @@ class Settings(BaseSettings):
     THROW_DELAYS: list[float] = [1, 1.05, 1.07, 1.073, 1.1]
 
     SIT_TO_ANIMAL_BUTTON: str = 'a'
-    SIT_TO_ANIMAL_TIMEOUT: float = 4.0
-
     BOBBER_CATCH_THRESHOLD: int = 35  # in percentage
     THREADED_BOBBER_SCANNER: bool = True
     RECALC_BOBBER_OFFSET_TIMEOUT: float = 2.0  # in seconds

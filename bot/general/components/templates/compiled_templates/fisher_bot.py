@@ -24,6 +24,9 @@ class FisherBotCompiledTemplates:
         self._status_bar_components = CompiledTemplates(TemplateCompiler(
             RawTemplates.FisherBotRawTemplates.status_bar_components
         ).compile_templates())
+        self._other = CompiledTemplates(TemplateCompiler(
+            RawTemplates.FisherBotRawTemplates.other
+        ).compile_templates())
         self._buffs = BuffsCompiledTemplates([
             BuffCompiledTemplates(
                 name=buff.name,
@@ -43,6 +46,10 @@ class FisherBotCompiledTemplates:
     @property
     def status_bar_components(self) -> CompiledTemplates:
         return self._status_bar_components
+
+    @property
+    def other(self) -> CompiledTemplates:
+        return self._other
 
     @property
     def buffs(self) -> BuffsCompiledTemplates:
