@@ -170,7 +170,7 @@ class FisherBot(InfoInterface):
         self._mouted_buff_scanner: TemplateScanner = TemplateScanner(
             FISHER_BOT_COMPILED_TEMPLATES.other.get('mounted_buff'),
             region=components_settings.REGIONS.ACTIVE_BUFFS,
-            threshold=0.7
+            threshold=0.8
         )
 
     def _init_catching_scanners(self) -> None:
