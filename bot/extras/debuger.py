@@ -236,9 +236,11 @@ def get_bobber_corner(return_: bool = False) -> dict | None:
 
 def check_for_bobbers_templates():
 
+    CHECK_FROM_SCREENSHOT: bool = False
+
     current_path = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(
-        current_path, '..', 'bot', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'bobbers'
+        current_path, '..', 'general', 'components', 'templates', 'raw_templates', 'fisher_bot', 'bobbers'
     )
     executor = ThreadPoolExecutor(max_workers=6)
 
@@ -271,49 +273,50 @@ def check_for_bobbers_templates():
     while True:
         with mss() as base:
             image = cv2.cvtColor(
-                np.array(base.grab(get_bobber_corner(return_=True)), dtype=np.uint8),  # type: ignore
+                np.array(cv2.imread(os.path.join(current_path, 'test.png')), dtype=np.uint8)
+                if CHECK_FROM_SCREENSHOT else np.array(base.grab(get_bobber_corner(return_=True)), dtype=np.uint8),  # type: ignore # noqa
                 cv2.COLOR_BGR2RGB
             )
 
-            futures: list[tuple[int, Future]] = list()
+        futures: list[tuple[int, Future]] = list()
 
-            passed_templates_data: list = list()
+        passed_templates_data: list = list()
 
-            for i, template in enumerate(templates):
-                future = executor.submit(
-                    validate_template,
-                    image, template, threshold=0.6
-                )
-                futures.append((i, future,))
+        for i, template in enumerate(templates):
+            future = executor.submit(
+                validate_template,
+                image, template, threshold=0.65
+            )
+            futures.append((i, future,))
 
-            while futures:
-                for i, future_info in enumerate(futures):
-                    template_index, future = future_info
+        while futures:
+            for i, future_info in enumerate(futures):
+                template_index, future = future_info
 
-                    if future.done():
-                        template_data = future.result()
+                if future.done():
+                    template_data = future.result()
 
-                        print(
-                            f"TEMPLATE \"{template_index}\" CONDITION => {template_data is not None}"
-                        )
-
-                        if template_data is not None:
-                            passed_templates_data.append(template_data)
-
-                        futures.pop(i)
-                        break
-
-            for template_data in passed_templates_data:
-                for x, y in zip(template_data.location_x, template_data.location_y):
-                    image = cv2.rectangle(
-                        image, (x, y),
-                        (
-                            x + template_data.width,
-                            y + template_data.height
-                        ),
-                        (0, 0, 255), 1
+                    print(
+                        f"TEMPLATE \"{template_index}\" CONDITION => {template_data is not None}"
                     )
-            cv2.imwrite('test.png', image)
+
+                    if template_data is not None:
+                        passed_templates_data.append(template_data)
+
+                    futures.pop(i)
+                    break
+
+        for template_data in passed_templates_data:
+            for x, y in zip(template_data.location_x, template_data.location_y):
+                image = cv2.rectangle(
+                    image, (x, y),
+                    (
+                        x + template_data.width,
+                        y + template_data.height
+                    ),
+                    (0, 0, 255), 1
+                )
+        cv2.imwrite('test.png', image)
 
         print('SLEEP 2 sec')
         time.sleep(2)
