@@ -4,3 +4,5 @@
 4. Add auto screen snapshot and endpoint for it DONE
 5. Add screenshot saving of recorded locations with rewriting DONE
 6. Refactor bot class (split to block of different logic)
+7. Validate dead status and some logic on it
+8. Timeout to non catching bobber
