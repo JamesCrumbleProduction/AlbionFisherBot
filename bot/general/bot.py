@@ -142,7 +142,7 @@ class FisherBot(InfoInterface):
         bobber_templates_scanner = ThreadedTemplateScanner if settings.THREADED_BOBBER_SCANNER else TemplateScanner
         self._bobber_scanner = bobber_templates_scanner(
             iterable_templates=FISHER_BOT_COMPILED_TEMPLATES.bobbers.templates,
-            threshold=0.6
+            threshold=0.65
         )
 
     def _init_catching_thresholds(self) -> None:
