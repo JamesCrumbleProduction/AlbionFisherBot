@@ -6,3 +6,4 @@
 6. Refactor bot class (split to block of different logic)
 7. Validate dead status and some logic on it
 8. Timeout to non catching bobber
+9. Edit individual rotation points
