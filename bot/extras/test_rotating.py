@@ -87,7 +87,7 @@ def reproduce_path() -> None:
             x, y, prev_time, *_ = record[0]
             prev_time: float
             MOUSE.position = (x, y)
-            MOUSE.press(Button.left)
+            MOUSE.press(Button.right)
 
             for moving in record[1:]:
                 x, y, next_time, *is_pressed = moving
@@ -98,13 +98,13 @@ def reproduce_path() -> None:
                 if len(is_pressed) != 0:
                     print(moving, next_time - prev_time)
                     if is_pressed[0] == 1:
-                        MOUSE.press(Button.left)
+                        MOUSE.press(Button.right)
                     elif is_pressed[0] == 0:
-                        MOUSE.release(Button.left)
+                        MOUSE.release(Button.right)
 
                 prev_time = next_time
 
-            MOUSE.release(Button.left)
+            MOUSE.release(Button.right)
             print(catching_area)
 
         print(f'FINISH ATTEMPT NUMBER {attempts}')
